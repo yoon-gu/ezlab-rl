@@ -3,10 +3,12 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - jupyter notebook
+  - python=3.10
+  - jupyter
+  - notebook
   - seaborn
   - tqdm
+  - pip
   - pip:
     - hydra-core
     - wandb
-    - stable-baselines3[extra_no_roms]
