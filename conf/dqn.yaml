@@ -1,0 +1,19 @@
+sir:
+  _target_: envs.SirEnvironment
+  population: 1000
+  beta: 0.002
+  gamma: 0.5
+  S0: 990
+  I0: 10
+  v_min: 0.0
+  v_max: 1.0
+  vaccine_importance: 10.0
+  continuous: false
+  tf: 30
+  dt: 1.0
+
+n_steps: 50000
+
+hydra:
+  job:
+    chdir: true

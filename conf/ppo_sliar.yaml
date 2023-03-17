@@ -1,0 +1,43 @@
+exp_name: default
+
+train:
+  algorithm: PPO
+  clip_range: 0.1
+  n_steps: 5000
+
+sliar:
+  _target_: envs.SliarEnvironment
+
+  S0: 1000000
+  L0: 0
+  I0: 1
+  A0: 0
+  population: 1000001
+
+  kappa: 0.526
+  alpha: 0.244
+  p: 0.667
+  eta: 0.244
+  epsilon: 0
+  q: 0.5
+  delta: 1
+  R0: 1.9847
+  tf: 300
+  dt: 1
+  P: 1
+  Q: 0.00001
+  R: 0.00001
+  W: 0.00001
+  continuous: false
+
+  nu_min: 0.0
+  tau_min: 0.0
+  sigma_min: 0.0
+
+  nu_max: 0.01
+  tau_max: 0.05
+  sigma_max: 0.01
+
+hydra:
+  job:
+    chdir: true
