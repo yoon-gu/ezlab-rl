@@ -8,6 +8,7 @@ dependencies:
   - notebook
   - seaborn
   - tqdm
+  - gym=0.21.0
   - pip
   - pip:
     - hydra-core
