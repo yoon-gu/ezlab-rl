@@ -16,10 +16,6 @@ from stable_baselines3.common.callbacks import (
     CallbackList,
     CheckpointCallback,
     EvalCallback,
-    EveryNTimesteps,
-    StopTrainingOnMaxEpisodes,
-    StopTrainingOnNoModelImprovement,
-    StopTrainingOnRewardThreshold,
     ProgressBarCallback
 )
 
@@ -59,7 +55,31 @@ def main(conf: DictConfig):
     sns.lineplot(data=df.r)
     plt.xlabel('episodes')
     plt.ylabel('The cummulative return')
-    plt.show()
+    plt.savefig(f"figures/reward.png")
+    plt.close()
 
+    # Visualize Controlled SIR Dynamics
+    model = PPO.load(f'best_model/best_model.zip')
+    state = eval_env.reset()
+    done = False
+    while not done:
+        action, _ = model.predict(state, deterministic=True)
+        state, _, done, _ = eval_env.step(action)
+
+    df = eval_env.dynamics
+    best_reward = df.rewards.sum()
+    plt.figure(figsize=(8,8))
+    plt.subplot(3, 1, 1)
+    plt.title(f"R = {df.rewards.sum():,.4f}")
+    sns.lineplot(data=df, x='days', y='infected', color='r')
+    plt.xticks(color='w')
+    plt.subplot(3, 1, 2)
+    sns.lineplot(data=df, x='days', y='nus', color='k', drawstyle='steps-pre')
+    plt.ylim([-0.001, max(conf.seiar.nu_daily_max * 1.2, 0.01)])
+    plt.xticks(color='w')
+    plt.subplot(3, 1, 3)
+    sns.lineplot(data=df, x='days', y='rewards', color='g')
+    plt.savefig(f"figures/best.png")
+    plt.close()
 if __name__ == '__main__':
     main()

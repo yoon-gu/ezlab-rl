@@ -21,7 +21,7 @@ seiar:
   tf: 180
   dt: 1.0
   
-n_steps: 5000
+n_steps: 500000
   
 hydra:
   job:

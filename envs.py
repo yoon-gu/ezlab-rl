@@ -306,8 +306,8 @@ class SeiarEnvironment(gym.Env):
         self.tf = tf
         self.dt = dt
         self.time = 0
-        self.hisotry = []
-        self.days = []
+        self.days = [self.time]
+        self.history = [[S0, E0, I0, A0, R0]]
         self.nus = []
         self.rewards = []
         self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(5,), dtype=np.float32)
@@ -315,11 +315,11 @@ class SeiarEnvironment(gym.Env):
 
     def reset(self):
         self.time = 0
+        self.days = [self.time]
         self.state = np.array([self.S0, self.E0, self.I0, self.A0, self.R0])
-        self.days = []
         self.nus = []
         self.rewards = []
-        self.hisotry = []
+        self.history = [self.state]
         return np.array(self.state, dtype=np.float32)
 
     def action2control(self, action):
@@ -349,7 +349,19 @@ class SeiarEnvironment(gym.Env):
 
         self.rewards.append(reward)
         self.days.append(self.time)
-        self.hisotry.append([S, E, I, A, R])
+        self.history.append([S, E, I, A, R])
 
         done = True if self.time >= self.tf else False
         return (np.array(new_state, dtype=np.float32), reward, done, {})
+    
+    @property
+    def dynamics(self):
+        df = pd.DataFrame(dict(
+                                days=self.days,
+                                susceptible=[s[0] for s in self.history],
+                                infected=[s[2] for s in self.history],
+                                nus=self.nus + [None],
+                                rewards=self.rewards + [None])
+
+                        )
+        return df
