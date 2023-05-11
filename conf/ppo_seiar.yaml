@@ -1,0 +1,30 @@
+seiar:
+  _target_: envs.SeiarEnvironment
+  beta: 0
+  psi: 0.7
+  nu_daily_max: 500000 # 1%
+  nu_total_max: 5000000 # 10%
+  kappa: 0.7143
+  alpha: 0.1667
+  tau: 0.0
+  p: 0.667
+  eta: 0.1667
+  f: 0.999
+  epsilon: 0.0
+  q: 0.5
+  delta: 0.5
+  S0: 50000000
+  E0: 0
+  I0: 1
+  A0: 0
+  R0: 0
+  tf: 180
+  dt: 1.0
+  continuous: false #ppo : true, dqn: false
+  
+n_steps: 500000
+# n_episodes : n_steps/tf
+
+hydra:
+  job:
+    chdir: true
