@@ -24,6 +24,8 @@
 
 \begin{frame}{SEIAR Optimal control}
     \begin{itemize}
+        \item Previous experiments have shown that for one control, \\ we can find optimal control using reinforcement learning.
+        \item By introducing a new problem that is one control, \\we will try to do optimal control in the following two ways.  
         \item Goal1 : DQN
         \item Goal2 : PPO
     \end{itemize}
@@ -76,80 +78,102 @@ $R_{0}$     & Basic Reproduction number                         & 1.9           
 
 \begin{frame}\frametitle{Goal in paper}
 \begin{itemize}
-    \item The goal is to \textcolor{Plum}{\textbf{minimize the number of people who becom infected}} at a \textbf{minimal efforts of vaccination}.
+    \item The goal is to \textcolor{Plum}{\textbf{minimize the number of people who become infected}} at a \textbf{minimal efforts of vaccination}.
     \item The objective functional is given by
 \end{itemize}
 \begin{align*}
 J(\nu) = \int_0^T P I(t) + Q \nu^2(t) dt\\
 \end{align*}
-with
-$0 \leq \nu(t) \leq 1$ , $\nu(t) S(t) \leq \nu_{max}$, $\int_0^T \nu(t) S(t) \leq \nu_{total}$
+with inequlity constraints
+$0 \leq \nu(t) \leq 1$, \quad $\nu(t) S(t) \leq \nu_{max}$, \quad $z(t) = \int_0^T \nu(t) S(t) \leq \nu_{total}$\\
+\begin{itemize}
+    \item $\nu_{max}$ : The maximum daily vaccination
+    \item $\nu_{total}$ : Vaccine coverage
+    \item $z'(t) = \nu(t) S(t)$ \quad $z(0) = 0$ \quad $z(T) \leq \nu_{total}$ \quad $z'(t) \leq \nu_{max}$
+\end{itemize}
 \end{frame}
 
+\begin{frame}\frametitle{penalty method}
+\begin{itemize}
+    \item \textcolor{Plum}{The constrained optimal control} $\rightarrow$ \textcolor{Plum}{into unconstrained optimization} problems.
+    \item The objective penalty function
+\end{itemize}
+\begin{align*}
+J_p(\nu) &= \int_0^T P I(t) + Q \nu^2(t) 
+\\ &+ \mu_1 (\nu(t) S(t) - \nu_{max})^2 H_1 (\nu(t)S(t) - \nu_{max}) 
+\\ &+ \mu_2 (z(t) - \nu_{total})^2 H_2 (z(t) - \nu_{total}) dt\\
+\end{align*}
+with Heaviside step function
+\begin{align*}
+H_1 (\nu(t)S(t) - \nu_{max}) &=
+\begin{cases}
+0 \quad\quad if \quad \nu(t)S(t) \leq \nu_{max} \\ 1 \quad\quad if \quad \nu(t)S(t) > \nu_{max} \\
+\end{cases}
+\\H_2(z(t) - \nu_{total}) &=
+\begin{cases}
+0 \quad\quad if \quad z(t) \leq \nu_{total} \\ 1 \quad\quad if \quad z(t) > \nu_{total} \\
+\end{cases}
+\end{align*}
+with $z(t) = \int_0^T \nu(t) S(t) dt$
+\begin{itemize} 
+    \item $z'(t) = \nu(t)S(t)$ \quad $z(0) = 0$ \quad $0 \leq \nu(t) \leq 1$
+\end{itemize}
+\end{frame}
 
-% \begin{frame}\frametitle{SLIAR optimal control}
-% \begin{align*}
-% \min_{u\in\mathcal{U}_{ad}} \int_0^T PI(t) + Q\nu^2(t) + R\tau^2(t) + W\sigma^2(t) dt
-% \end{align*}
+\begin{frame}
+\centering
+\textcolor{Plum}{\textbf{Reinforcement Learning}}
+\end{frame}
 
-%     subject to 
-%     \begin{align*}
-%     \begin{cases}
-%         S' &= -\beta (1-\sigma) S\Lambda - \nu S\\
-%         L' &= \beta (1-\sigma) S\Lambda - \kappa L\\
-%         I' &= p\kappa L - \alpha I - \tau I \\
-%         A' &= (1-p)\kappa L - \eta A \\
-%    \end{cases} \qquad with \quad \Lambda = \epsilon L + (1 - q) I + \delta A
-%    \end{align*}
-% \end{frame}
+\begin{frame}\frametitle{Set the environment for DQN}
+\begin{itemize}
+    \item $\nu_{max} = 5e05 (0.01 * S0) $
+    \item $\nu_{total} = 5e06 (0.1 * S0)$
+    \item Observation space : 5 (S, E, I, A, R)
+    \item Action space : 2 (0 or 1)
+    \item Action
+    \begin{itemize}
+            \item $\nu$ : the number of vaccinated people
+            \item action = 0 $\rightarrow$ $\nu = 0$
+            \item action = 1 $\rightarrow$ $\nu = \nu_{max}$
+            \item $\nu$(ratio) = $\nu/\nu_{max}$
+    \end{itemize}
+    \item Reward design
+        \begin{itemize}
+            \item case1)
+                \begin{itemize}
+                    \item - I - $\nu$
+                    \item if sum($\nu$) $> \nu_{total}$, penalty reward: - 10000
+                \end{itemize}
+            \item case2) Similar to the paper
+                \begin{itemize}
+                    \item -PI - Q$\nu(ratio)^2$  
+                    \item if $\nu(ratio)*S(t) > \nu_{max}$,  penalty reward: -10000
+                    \item if sum($\nu$) $> \nu_{total}$ , penalty reward: -10000
+                    \item P, Q : proper weight
+                \end{itemize}
+        \end{itemize}
+\end{itemize}
+\end{frame}
 
+\begin{frame}
+\centering
+\textcolor{Plum}{\textbf{Gaol1 : DQN}}
+\end{frame}
 
-% \begin{frame}\frametitle{SLIAR optimal control : multicontrol(nu+tau+sigma)}
-% \begin{itemize}
-% \item $ \min_{u\in\mathcal{U}_{ad}} \int_0^T PI(t) + Q\nu^2(t) + R\tau^2(t) + W\sigma^2(t) dt$
-% \item Method : DQN (learning rate : 5e-4)
-% \item $\nu_{max} = 0.01$, $\tau_{max} = 0.05$,  $\sigma_{max} = 0.01$
-% \end{itemize}
-% \centering
-%     \includegraphics[width=6cm]{figure/2023-04-14/03-34-57/0/figures/all_best.png}
-%     \includegraphics[width=6cm]{figure/2023-04-14/03-34-57/0/SLIAR_score.png}
-% \end{frame}
+\begin{frame}\frametitle{SELAR optimal: DQN}
+\begin{itemize}
+    \item Error
+\end{itemize}
+\includegraphics[width=15cm]{figures/error_m.png}
+\end{frame}
 
-% \begin{frame}{Last session discussion}
-%     \begin{itemize}
-%         \item Issue : Good learning? 
-%         \item Check 1 : Change the weight
-%     \end{itemize}
-% \end{frame}
-
-% \begin{frame}\frametitle{SLIAR optimal control : multicontrol(nu+tau+sigma)}
-% \begin{itemize}
-% \item $ \min_{u\in\mathcal{U}_{ad}} \int_0^T PI(t) + Q\nu^2(t) + R\tau^2(t) + W\sigma^2(t) dt$
-% \item Method : DQN (learning rate : 5e-4)
-% \item $\nu_{max} = 0.01$, $\tau_{max} = 0.05$,  $\sigma_{max} = 0.01$
-% \end{itemize}
-% \centering
-%     \includegraphics[width=6cm]{figure/2023-04-14/03-34-57/1/figures/all_83000.png}
-%     \includegraphics[width=6cm]{figure/2023-04-14/03-34-57/1/SLIAR_score.png}
-% \end{frame}
-
-% \begin{frame}\frametitle{SLIAR optimal control : multicontrol(nu+tau+sigma)}
-% \begin{itemize}
-% \item $ \min_{u\in\mathcal{U}_{ad}} \int_0^T PI(t) + Q\nu^2(t) + R\tau^2(t) + W\sigma^2(t) dt$
-% \item Method : DQN (learning rate : 5e-4)
-% \item $\nu_{max} = 0.01$, $\tau_{max} = 0.05$,  $\sigma_{max} = 0.01$
-% \end{itemize}
-% \centering
-%     \includegraphics[width=6cm]{figure/2023-04-14/03-34-57/3/figures/all_6000.png}
-%     \includegraphics[width=6cm]{figure/2023-04-14/03-34-57/3/SLIAR_score.png}
-% \end{frame}
-
-% \begin{frame}{Next}
-%     \begin{itemize}
-%         \item Issue : Good learning? 
-%         \item Check 2 : Change the replay buffer
-%     \end{itemize}
-% \end{frame}
-
+\begin{frame}\frametitle{Next}
+\begin{itemize}
+    \item Google colab 연동(환경 맞추기)
+    \item 500,000step까지 작동 확인
+    \item Reward Design : Case1, Case2 Check!
+\end{itemize}
+\end{frame}
 
 \end{document}

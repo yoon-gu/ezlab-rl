@@ -20,10 +20,9 @@ seiar:
   R0: 0
   tf: 180
   dt: 1.0
-  RepN: 1.9
   continuous: false #ppo : true, dqn: false
   
-n_steps: 500000
+n_steps: 50000
 # n_steps/tf = n_episodes
 
 hydra:
