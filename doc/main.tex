@@ -22,10 +22,10 @@
 
   \maketitle
 
-\begin{frame}{SLIAR Optimal control}
+\begin{frame}{SEIAR Optimal control}
     \begin{itemize}
-        \item Goal2 : SLIAR Multi-control
-        \item Method : DQN
+        \item Goal1 : DQN
+        \item Goal2 : PPO
     \end{itemize}
 \end{frame}
 
@@ -33,6 +33,7 @@
 \begin{frame}\frametitle{Mathematical models}
     \begin{itemize}
         \item The influenza model : SEIAR model 
+        \item J.Kim et.al.,\textit{Constrained optimal control applied to vaccination for influenza},2016
     \end{itemize}
     \begin{align*}
         S'(t) &= -\beta S(t) \Lambda(t) - \psi \nu(t) S(t)\\
@@ -41,9 +42,10 @@
         A'(t) &= (1-p)\kappa E(t) - \eta A(t) \\
         R'(t) &= f \alpha I(t) + \tau I(t) + \eta A(t) + \psi \nu(t) S(t)
    \end{align*}
-    \qquad with $\Lambda(t) = \epsilon E(t) + (1 - q) I(t) + \delta A(t)$ 
+with $\Lambda(t) = \epsilon E(t) + (1 - q) I(t) + \delta A(t)$ 
+    
     \centering
-    \includegraphics[width=10cm]{figures/model.png}
+    \includegraphics[width=8cm]{figures/model.png}
 \end{frame}
 
 
@@ -62,21 +64,27 @@ $\alpha$     & Recovery rate for the (symptomatic) infective     & 0.1667 /day  
 $\eta$       & Recovery rate for the asymptomatic                & 0.1667 / day \\
 $\tau$       & Antiviral treatment rate                          & 0 / day      \\
 $\psi$       & Efficacy of vaccination                           & 70\%         \\ 
-$\beta$    & Transmission rate                                 & *           \\
+$\beta$    & Transmission rate                                 & 6.3346e-08           \\
 $R_{0}$     & Basic Reproduction number                         & 1.9           \\\hline
 \end{tabular}
 \end{table}
 \begin{itemize}
-    \item $\beta : \frac{R0}{(S0 * ((\epsilon / \kappa) + ((1 - q)p/\alpha) + (\delta*(1-p)/\eta))}$
-    \item $S0 = 5e7,   E0 = 0,    I0 = 1,     A0 = 0,     R0 = 0$
+    \item $S0 = 5e07, \quad E0 = 0, \quad   I0 = 1,   \quad  A0 = 0,  \quad   R0 = 0$
 \end{itemize}
 \end{frame}
 
 
-% \begin{frame}\frametitle{SLIAR w/o constrol}
-%     \centering
-%     \includegraphics[width=10cm]{figure/sliar_wo_control.png}
-% \end{frame}
+\begin{frame}\frametitle{Goal in paper}
+\begin{itemize}
+    \item The goal is to \textcolor{Plum}{\textbf{minimize the number of people who becom infected}} at a \textbf{minimal efforts of vaccination}.
+    \item The objective functional is given by
+\end{itemize}
+\begin{align*}
+J(\nu) = \int_0^T P I(t) + Q \nu^2(t) dt\\
+\end{align*}
+with
+$0 \leq \nu(t) \leq 1$ , $\nu(t) S(t) \leq \nu_{max}$, $\int_0^T \nu(t) S(t) \leq \nu_{total}$
+\end{frame}
 
 
 % \begin{frame}\frametitle{SLIAR optimal control}

@@ -262,7 +262,7 @@ def seiar(y, t, beta, psi, nu, kappa, alpha, tau, p, eta, f, epsilon, q, delta):
     return [dSdt, dEdt, dIdt, dAdt, dRdt]
 
 class SeiarEnvironment(gym.Env):
-    #beta: float  #reproduction number에 따라 다름
+    beta: float
     psi: float
     nu_daily_max: float
     nu_total_max: float
@@ -287,7 +287,7 @@ class SeiarEnvironment(gym.Env):
                  tau, p, eta, f, epsilon, q, delta,
                  S0, E0, I0, A0, R0, tf, dt, continuous):
         super(SeiarEnvironment, self).__init__()
-        self.beta = self.RepN/(S0 * ((self.epsilon / self.kappa) + ((1 - self.q)*self.p/self.alpha) + (self.delta*(1-self.p)/self.eta)))
+        self.beta = beta
         self.psi = psi
         self.nu_daily_max = nu_daily_max
         self.nu_total_max = nu_total_max
@@ -338,7 +338,7 @@ class SeiarEnvironment(gym.Env):
         if self.continuous:
             nu = self.action2control(action)
         else:
-            nu = self.nu_min if action == 0 else self.nu_daily_max
+            nu = self.nu_min if action == 0 else self.nu_min + (self.nu_daily_max - self.nu_min)
         self.nus.append(nu)
         S0, E0, I0, A0, R0 = self.state
         sol = odeint(seiar, [min(0, S0-nu), E0, I0, A0, R0], 
