@@ -76,7 +76,7 @@ def main(conf: DictConfig):
     plt.xticks(color='w')
     plt.subplot(3, 1, 2)
     sns.lineplot(data=df, x='days', y='nus', color='k', drawstyle='steps-pre')
-    plt.ylim([-0.001, max(conf.seiar.nu_daily_max * 1.2, 0.01)])
+    #plt.ylim([-0.001, max(conf.seiar.nu_daily_max * 1.2, 0.01)])
     plt.xticks(color='w')
     plt.subplot(3, 1, 3)
     sns.lineplot(data=df, x='days', y='rewards', color='g')
