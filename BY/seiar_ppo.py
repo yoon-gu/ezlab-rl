@@ -1,4 +1,5 @@
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import hydra
 from hydra.utils import instantiate
 import seaborn as sns
@@ -25,14 +26,14 @@ sns.set_theme(style="whitegrid")
 def main(conf: DictConfig):
     train_env = instantiate(conf.seiar)
     check_env(train_env)
-    log_dir = "./seiar_ppo_log"
+    log_dir = "./seiar_dqn_log"
     os.makedirs(log_dir, exist_ok=True)
     train_env = Monitor(train_env, log_dir)
     policy_kwargs = dict(
                             # activation_fn=torch.nn.ReLU,
                             # net_arch=[16, 32, 64, 16]
                         )
-    model = PPO("MlpPolicy", train_env, verbose=0,
+    model = DQN("MlpPolicy", train_env, verbose=0,
                 policy_kwargs=policy_kwargs)
 
     eval_env = instantiate(conf.seiar)
@@ -59,12 +60,12 @@ def main(conf: DictConfig):
     plt.close()
 
     # Visualize Controlled SIR Dynamics
-    model = PPO.load(f'best_model/best_model.zip')
-    state = eval_env.reset()
+    model = DQN.load(f'best_model/best_model.zip')
+    state, _ = eval_env.reset()
     done = False
     while not done:
         action, _ = model.predict(state, deterministic=True)
-        state, _, done, _ = eval_env.step(action)
+        state, _, done, _, _ = eval_env.step(action)
 
     df = eval_env.dynamics
     best_reward = df.rewards.sum()

@@ -59,7 +59,7 @@ class SirEnvironment(gym.Env):
         self.actions = []
         self.rewards = []
         self.state = np.array([self.S0, self.I0])
-        return np.array(self.state, dtype=np.float32)
+        return np.array(self.state, dtype=np.float32), {}
 
     def action2vaccine(self, action):
         return self.v_min + self.v_max * (action[0] + 1.0) / 2.0
@@ -86,7 +86,7 @@ class SirEnvironment(gym.Env):
         self.infected.append(I)
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
 
     @property
     def dynamics(self):
@@ -249,6 +249,8 @@ class SliarEnvironment(gym.Env):
                         )
         return df
 
+
+################## seiar ####################################
 def seiar(y, t, beta, psi, nu, kappa, alpha, tau, p, eta, f, epsilon, q, delta):
     S, E, I, A, R = y
     Lambda = epsilon * E + (1 - q) * I + delta * A
@@ -279,10 +281,10 @@ class SeiarEnvironment(gym.Env):
     A0: float
     R0: float
     tf: float
-
+    continuous: bool
     def __init__(self, beta, psi, nu_daily_max, nu_total_max, kappa, alpha,
                  tau, p, eta, f, epsilon, q, delta,
-                 S0, E0, I0, A0, R0, tf, dt):
+                 S0, E0, I0, A0, R0, tf, dt, continuous):
         super(SeiarEnvironment, self).__init__()
         self.beta = beta
         self.psi = psi
@@ -310,8 +312,13 @@ class SeiarEnvironment(gym.Env):
         self.history = [[S0, E0, I0, A0, R0]]
         self.nus = []
         self.rewards = []
+        self.continuous = continuous
         self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(5,), dtype=np.float32)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        if self.continuous:
+            self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        else:
+            # for dqn 
+            self.action_space = gym.spaces.Discrete(2)
 
     def reset(self):
         self.time = 0
@@ -320,14 +327,17 @@ class SeiarEnvironment(gym.Env):
         self.nus = []
         self.rewards = []
         self.history = [self.state]
-        return np.array(self.state, dtype=np.float32)
+        return np.array(self.state, dtype=np.float32), {}
 
     def action2control(self, action):
         nu = self.nu_min + (self.nu_daily_max - self.nu_min) * (action[0] + 1.0) / 2.0
         return nu
 
-    def step(self, action):        
-        nu = self.action2control(action)
+    def step(self, action):
+        if self.continuous:
+            nu = self.action2control(action)
+        else:
+            nu = self.nu_min if action == 0 else self.nu_daily_max
         self.nus.append(nu)
         S0, E0, I0, A0, R0 = self.state
         sol = odeint(seiar, [min(0, S0-nu), E0, I0, A0, R0], 
@@ -352,7 +362,7 @@ class SeiarEnvironment(gym.Env):
         self.history.append([S, E, I, A, R])
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
     
     @property
     def dynamics(self):

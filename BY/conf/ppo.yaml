@@ -8,7 +8,7 @@ sir:
   v_min: 0.0
   v_max: 1.0
   vaccine_importance: 10.0
-  continuous: true
+  continuous: false # true: ppo, false: dqn
   tf: 30
   dt: 1.0
 
