@@ -282,7 +282,6 @@ class SeiarEnvironment(gym.Env):
     R0: float
     tf: float
     continuous: bool
-    RepN: float
     def __init__(self, beta, psi, nu_daily_max, nu_total_max, kappa, alpha,
                  tau, p, eta, f, epsilon, q, delta,
                  S0, E0, I0, A0, R0, tf, dt, continuous):
@@ -338,12 +337,12 @@ class SeiarEnvironment(gym.Env):
         if self.continuous:
             nu = self.action2control(action)
         else:
-            nu = self.nu_min if action == 0 else self.nu_min + (self.nu_daily_max - self.nu_min)
+            nu = self.nu_min if action == 0 else self.nu_daily_max
         self.nus.append(nu)
         S0, E0, I0, A0, R0 = self.state
-        sol = odeint(seiar, [min(0, S0-nu), E0, I0, A0, R0], 
+        sol = odeint(seiar, [max(0, S0-nu), E0, I0, A0, R0], 
                      np.linspace(0, self.dt, 101),
-                     args=(self.beta, self.psi, 0,
+                     args=(self.beta, self.psi, nu/self.nu_daily_max,
                            self.kappa, self.alpha, self.tau, 
                            self.p, self.eta, self.f, self.epsilon,
                            self.q, self.delta))
@@ -353,7 +352,7 @@ class SeiarEnvironment(gym.Env):
         S, E, I, A, R = new_state
         self.state = new_state
 
-        reward = - I - nu
+        reward = - I - nu 
         if np.sum(self.nus) > self.nu_total_max:
             reward -= 1000
         reward *= self.dt
