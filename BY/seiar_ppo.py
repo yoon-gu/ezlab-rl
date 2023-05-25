@@ -1,4 +1,5 @@
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import hydra
 from hydra.utils import instantiate
 import seaborn as sns
@@ -25,14 +26,14 @@ sns.set_theme(style="whitegrid")
 def main(conf: DictConfig):
     train_env = instantiate(conf.seiar)
     check_env(train_env)
-    log_dir = "./seiar_ppo_log"
+    log_dir = "./seiar_dqn_log"
     os.makedirs(log_dir, exist_ok=True)
     train_env = Monitor(train_env, log_dir)
     policy_kwargs = dict(
                             # activation_fn=torch.nn.ReLU,
                             # net_arch=[16, 32, 64, 16]
                         )
-    model = PPO("MlpPolicy", train_env, verbose=0,
+    model = DQN("MlpPolicy", train_env, verbose=0,
                 policy_kwargs=policy_kwargs)
 
     eval_env = instantiate(conf.seiar)
@@ -48,6 +49,7 @@ def main(conf: DictConfig):
                                              name_prefix='rl_model')
     callback = CallbackList([checkpoint_callback, eval_callback, ProgressBarCallback()])
 
+    # model learn
     model.learn(total_timesteps=conf.n_steps, callback=callback)
 
     os.makedirs('figures', exist_ok=True)
@@ -59,26 +61,29 @@ def main(conf: DictConfig):
     plt.close()
 
     # Visualize Controlled SIR Dynamics
-    model = PPO.load(f'best_model/best_model.zip')
-    state = eval_env.reset()
+    # best인 애들 모아와
+    model = DQN.load(f'best_model/best_model.zip')
+    state, _ = eval_env.reset()
     done = False
     while not done:
         action, _ = model.predict(state, deterministic=True)
-        state, _, done, _ = eval_env.step(action)
+        state, _, done, _, _ = eval_env.step(action)
 
     df = eval_env.dynamics
     best_reward = df.rewards.sum()
     plt.figure(figsize=(8,8))
-    plt.subplot(3, 1, 1)
+    plt.subplot(4, 1, 1)
     plt.title(f"R = {df.rewards.sum():,.4f}")
     sns.lineplot(data=df, x='days', y='infected', color='r')
     plt.xticks(color='w')
-    plt.subplot(3, 1, 2)
+    plt.subplot(4, 1, 2)
     sns.lineplot(data=df, x='days', y='nus', color='k', drawstyle='steps-pre')
-    plt.ylim([-0.001, max(conf.seiar.nu_daily_max * 1.2, 0.01)])
+    #plt.ylim([-0.001, max(conf.seiar.nu_daily_max * 1.2, 0.01)])
     plt.xticks(color='w')
-    plt.subplot(3, 1, 3)
+    plt.subplot(4, 1, 3)
     sns.lineplot(data=df, x='days', y='rewards', color='g')
+    plt.subplot(4, 1, 4)
+    sns.lineplot(data=df, x='days', y='susceptible', color='b')
     plt.savefig(f"figures/best.png")
     plt.close()
 if __name__ == '__main__':
