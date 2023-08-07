@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
@@ -51,7 +51,7 @@ class SirEnvironment(gym.Env):
         self.time = 0.0
         self.dt = dt
 
-    def reset(self):
+    def reset(self, seed=0):
         self.time = 0.0
         self.days = [self.time]
         self.susceptible = [self.S0]
@@ -59,7 +59,7 @@ class SirEnvironment(gym.Env):
         self.actions = []
         self.rewards = []
         self.state = np.array([self.S0, self.I0])
-        return np.array(self.state, dtype=np.float32)
+        return np.array(self.state, dtype=np.float32), {}
 
     def action2vaccine(self, action):
         return self.v_min + self.v_max * (action[0] + 1.0) / 2.0
@@ -86,7 +86,7 @@ class SirEnvironment(gym.Env):
         self.infected.append(I)
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
 
     @property
     def dynamics(self):
@@ -353,7 +353,7 @@ class SeiarEnvironment(gym.Env):
 
         done = True if self.time >= self.tf else False
         return (np.array(new_state, dtype=np.float32), reward, done, {})
-    
+
     @property
     def dynamics(self):
         df = pd.DataFrame(dict(

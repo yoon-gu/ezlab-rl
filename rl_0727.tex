@@ -1,0 +1,40 @@
+\documentclass{beamer}
+\title{RL with initial quess}
+\author{Yoon-gu Hwang}
+\institute{LG CNS}
+\date{\today}
+
+\begin{document}
+\begin{frame}
+\frametitle{Sample frame title}
+Initial guess from Open loop control results
+\begin{itemize}
+	\item DQN: Action-Value Function, $Q(s,a;\theta_0)$
+	\begin{equation}
+		\theta_0 = \arg\min_\theta L(Q(s,a;\theta), V(s,a))
+	\end{equation}where $V(s,a)$ is the cost function produced by an open loop control.
+	\item PPO: Policy Network, $\pi_0(s;\theta_0)$
+	\begin{equation}
+		\theta_0 = \arg\min_\theta L(\pi_0(s;\theta_0), u(s))
+	\end{equation}where $u(s)$ is an action produced by an open loop control.
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{DQN; Value-based Iteration}
+Assume that we have $(S(t), I(t), u^*(t))$ after applying a successful Pontraygin's principle algorithm.
+We want an initial parameter $\theta_0$ such that
+\begin{equation}
+	V(S(t_i), I(t_i);\theta_0) \approx J(S(t), I(t), u(t))
+\end{equation}
+
+\end{frame}
+
+\begin{frame}\frametitle{PPO; Policy Iteration}
+Assume that we have $(S(t), I(t), u^*(t))$ after applying a successful Pontraygin's principle algorithm.
+We want an initial parameter $\theta_0$ such that
+\begin{equation}
+	\pi(S(t_i), I(t_i);\theta_0) \approx u(t_i)
+\end{equation}
+
+\end{frame}
+\end{document}
