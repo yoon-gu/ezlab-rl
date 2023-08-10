@@ -1,0 +1,77 @@
+\documentclass[10pt]{beamer}
+\usepackage{kotex}
+\usepackage{minted}
+\title{RL with initial quess}
+\author{Yoon-gu Hwang}
+\institute{LG CNS}
+\date{\today}
+
+\begin{document}
+\begin{frame}\frametitle{Docker}
+주로 Ubuntu를 사용한다.
+\begin{itemize}
+	\item On different OS, same environment
+	\item Isolated from the host OS
+	\item Can be run on a cloud
+\end{itemize}
+
+다음 2가지 용어를 구분하자. 간단하게 다음과 같이 비유할 수 있다.
+
+\begin{enumerate}
+	\item Docker Image: Windows Backup 이미지
+	\item Docker Container: Windows Backup 이미지로 초기화한 컴퓨터
+\end{enumerate}
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{Dockerfile}
+
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos
+]
+{docker}
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+RUN apt-get update
+RUN apt install -y git
+RUN git clone https://github.com/DLR-RM/stable-baselines3.git
+RUN cd stable-baselines3 && pip install '.[extra_no_roms]'
+RUN pip install hydra-core scipy seaborn
+WORKDIR /workspace
+
+\end{minted}
+
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{Create Docker Image}
+\begin{enumerate}
+	\item \mintinline{bash}{git clone https://github.com/yoon-gu/ezlab-rl}
+	\item \mintinline{bash}{cd ezlab-rl}
+	\item \mintinline{bash}{docker build . -t sb3}
+	\item You can check your created docker image named sb3 by running \mintinline{bash}{docker images}.
+\end{enumerate}
+
+\end{frame}
+
+\begin{frame}[fragile]\frametitle{Create Docker Container and Run your code}
+\begin{minted}
+[
+frame=lines,
+framesep=2mm,
+baselinestretch=1.2,
+fontsize=\footnotesize,
+linenos
+]
+{bash}
+docker run --gpus all -it \
+	-v /home/yoon-gu/ezlab-rl:/workspace \
+	sb3 bash
+python sir_ppo.py
+\end{minted}
+
+
+\end{frame}
+\end{document}

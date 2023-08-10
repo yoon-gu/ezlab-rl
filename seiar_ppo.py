@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from omegaconf import DictConfig, OmegaConf
-from stable_baselines3 import PPO, DQN, A2C, SAC, DDPG
+from stable_baselines3 import PPO, DQN, A2C, SAC, DDPG, HER
 from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.monitor import Monitor
@@ -60,11 +60,11 @@ def main(conf: DictConfig):
 
     # Visualize Controlled SIR Dynamics
     model = PPO.load(f'best_model/best_model.zip')
-    state = eval_env.reset()
+    state, _ = eval_env.reset()
     done = False
     while not done:
         action, _ = model.predict(state, deterministic=True)
-        state, _, done, _ = eval_env.step(action)
+        state, _, done, _, _ = eval_env.step(action)
 
     df = eval_env.dynamics
     best_reward = df.rewards.sum()

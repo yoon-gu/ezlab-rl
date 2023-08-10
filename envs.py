@@ -231,7 +231,7 @@ class SliarEnvironment(gym.Env):
         self.asymp.append(A)
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
 
     @property
     def dynamics(self):
@@ -313,20 +313,20 @@ class SeiarEnvironment(gym.Env):
         self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(5,), dtype=np.float32)
         self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
 
-    def reset(self):
+    def reset(self, seed=0):
         self.time = 0
         self.days = [self.time]
         self.state = np.array([self.S0, self.E0, self.I0, self.A0, self.R0])
         self.nus = []
         self.rewards = []
         self.history = [self.state]
-        return np.array(self.state, dtype=np.float32)
+        return np.array(self.state, dtype=np.float32), {}
 
     def action2control(self, action):
         nu = self.nu_min + (self.nu_daily_max - self.nu_min) * (action[0] + 1.0) / 2.0
         return nu
 
-    def step(self, action):        
+    def step(self, action):
         nu = self.action2control(action)
         self.nus.append(nu)
         S0, E0, I0, A0, R0 = self.state
@@ -352,7 +352,7 @@ class SeiarEnvironment(gym.Env):
         self.history.append([S, E, I, A, R])
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
 
     @property
     def dynamics(self):

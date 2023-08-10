@@ -20,9 +20,9 @@ seiar:
   R0: 0
   tf: 180
   dt: 1.0
-  
-n_steps: 500000
-  
+
+n_steps: 100000
+
 hydra:
   job:
     chdir: true

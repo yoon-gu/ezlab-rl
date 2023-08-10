@@ -34,7 +34,7 @@ def main(conf: DictConfig):
     train_env = Monitor(train_env, log_dir)
     policy_kwargs = dict(
                             # activation_fn=torch.nn.ReLU,
-                            # net_arch=[16, 32, 64, 16]
+                            net_arch=[16, 32, 64, 16]
                         )
     model = PPO("MlpPolicy", train_env, verbose=0,
                 policy_kwargs=policy_kwargs)
@@ -64,11 +64,11 @@ def main(conf: DictConfig):
 
     # Visualize Controlled SIR Dynamics
     model = PPO.load(f'best_model/best_model.zip')
-    state = eval_env.reset()
+    state, _ = eval_env.reset()
     done = False
     while not done:
         action, _ = model.predict(state, deterministic=True)
-        state, _, done, _ = eval_env.step(action)
+        state, _, done, _, _ = eval_env.step(action)
 
     df = eval_env.dynamics
     best_reward = df.rewards.sum()
@@ -90,11 +90,11 @@ def main(conf: DictConfig):
     max_val = -float('inf')
     for path in tqdm(os.listdir('checkpoints')):
         model = PPO.load(f'checkpoints/{path}')
-        state = eval_env.reset()
+        state, _ = eval_env.reset()
         done = False
         while not done:
             action, _ = model.predict(state, deterministic=True)
-            state, _, done, _ = eval_env.step(action)
+            state, _, done, _, _ = eval_env.step(action)
         df = eval_env.dynamics
 
         cum_reward = df.rewards.sum()
@@ -122,11 +122,11 @@ def main(conf: DictConfig):
     if best_reward < max_val:
         best_reward = max_val
         model = PPO.load(f'checkpoints/{best_checkpoint}')
-        state = eval_env.reset()
+        state, _ = eval_env.reset()
         done = False
         while not done:
             action, _ = model.predict(state, deterministic=True)
-            state, _, done, _ = eval_env.step(action)
+            state, _, done, _, _ = eval_env.step(action)
         df = eval_env.dynamics
         # sns.lineplot(data=df, x='days', y='susceptible')
         plt.figure(figsize=(8,8))
