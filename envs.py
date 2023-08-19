@@ -86,7 +86,7 @@ class SirEnvironment(gym.Env):
         self.infected.append(I)
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, {})
 
     @property
     def dynamics(self):
