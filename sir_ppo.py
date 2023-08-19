@@ -64,11 +64,11 @@ def main(conf: DictConfig):
 
     # Visualize Controlled SIR Dynamics
     model = PPO.load(f'best_model/best_model.zip')
-    state, _ = eval_env.reset()
+    state = eval_env.reset()
     done = False
     while not done:
         action, _ = model.predict(state, deterministic=True)
-        state, _, done, _, _ = eval_env.step(action)
+        state, _, done, _ = eval_env.step(action)
 
     df = eval_env.dynamics
     best_reward = df.rewards.sum()
@@ -90,11 +90,11 @@ def main(conf: DictConfig):
     max_val = -float('inf')
     for path in tqdm(os.listdir('checkpoints')):
         model = PPO.load(f'checkpoints/{path}')
-        state, _ = eval_env.reset()
+        state = eval_env.reset()
         done = False
         while not done:
             action, _ = model.predict(state, deterministic=True)
-            state, _, done, _, _ = eval_env.step(action)
+            state, _, done, _ = eval_env.step(action)
         df = eval_env.dynamics
 
         cum_reward = df.rewards.sum()
