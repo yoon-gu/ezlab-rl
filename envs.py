@@ -59,7 +59,7 @@ class SirEnvironment(gym.Env):
         self.actions = []
         self.rewards = []
         self.state = np.array([self.S0, self.I0])
-        return np.array(self.state, dtype=np.float32), {}
+        return np.array(self.state, dtype=np.float32)
 
     def action2vaccine(self, action):
         return self.v_min + self.v_max * (action[0] + 1.0) / 2.0
