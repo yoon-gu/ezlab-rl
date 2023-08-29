@@ -1,4 +1,5 @@
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import hydra
 from hydra.utils import instantiate
 import seaborn as sns
@@ -29,14 +30,14 @@ sns.set_theme(style="whitegrid")
 def main(conf: DictConfig):
     train_env = instantiate(conf.sir)
     check_env(train_env)
-    log_dir = "./sir_ppo_log"
+    log_dir = "./sir_dqn_log"
     os.makedirs(log_dir, exist_ok=True)
     train_env = Monitor(train_env, log_dir)
     policy_kwargs = dict(
                             # activation_fn=torch.nn.ReLU,
                             net_arch=[16, 32, 64, 16]
                         )
-    model = PPO("MlpPolicy", train_env, verbose=0,
+    model = DQN("MlpPolicy", train_env, verbose=0,
                 policy_kwargs=policy_kwargs)
 
     eval_env = instantiate(conf.sir)
@@ -63,11 +64,11 @@ def main(conf: DictConfig):
     plt.close()
 
     # Visualize Controlled SIR Dynamics
-    model = PPO.load(f'best_model/best_model.zip')
+    model = DQN.load(f'best_model/best_model.zip')
     state, _ = eval_env.reset()
     done = False
     while not done:
-        action, _ = model.predict(state, deterministic=True)
+        action, _ = model.predict(state, deterministic=True) #,deterministic=True
         state, _, done, _, _ = eval_env.step(action)
 
     df = eval_env.dynamics
@@ -89,7 +90,7 @@ def main(conf: DictConfig):
     best_checkpoint = ""
     max_val = -float('inf')
     for path in tqdm(os.listdir('checkpoints')):
-        model = PPO.load(f'checkpoints/{path}')
+        model = DQN.load(f'checkpoints/{path}')
         state, _ = eval_env.reset()
         done = False
         while not done:
@@ -121,7 +122,7 @@ def main(conf: DictConfig):
     # Visualize Controlled SIR Dynamics
     if best_reward < max_val:
         best_reward = max_val
-        model = PPO.load(f'checkpoints/{best_checkpoint}')
+        model = DQN.load(f'checkpoints/{best_checkpoint}')
         state, _ = eval_env.reset()
         done = False
         while not done:

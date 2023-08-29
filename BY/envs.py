@@ -249,6 +249,8 @@ class SliarEnvironment(gym.Env):
                         )
         return df
 
+
+################## seiar ####################################
 def seiar(y, t, beta, psi, nu, kappa, alpha, tau, p, eta, f, epsilon, q, delta):
     S, E, I, A, R = y
     Lambda = epsilon * E + (1 - q) * I + delta * A
@@ -279,10 +281,10 @@ class SeiarEnvironment(gym.Env):
     A0: float
     R0: float
     tf: float
-
+    continuous: bool
     def __init__(self, beta, psi, nu_daily_max, nu_total_max, kappa, alpha,
                  tau, p, eta, f, epsilon, q, delta,
-                 S0, E0, I0, A0, R0, tf, dt):
+                 S0, E0, I0, A0, R0, tf, dt, continuous):
         super(SeiarEnvironment, self).__init__()
         self.beta = beta
         self.psi = psi
@@ -310,8 +312,13 @@ class SeiarEnvironment(gym.Env):
         self.history = [[S0, E0, I0, A0, R0]]
         self.nus = []
         self.rewards = []
+        self.continuous = continuous
         self.observation_space = gym.spaces.Box(low=0, high=np.inf, shape=(5,), dtype=np.float32)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        if self.continuous:
+            self.action_space = gym.spaces.Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+        else:
+            # for dqn 
+            self.action_space = gym.spaces.Discrete(2)
 
     def reset(self, seed=0):
         self.time = 0
@@ -327,12 +334,15 @@ class SeiarEnvironment(gym.Env):
         return nu
 
     def step(self, action):
-        nu = self.action2control(action)
+        if self.continuous:
+            nu = self.action2control(action)
+        else:
+            nu = self.nu_min if action == 0 else self.nu_daily_max
         self.nus.append(nu)
         S0, E0, I0, A0, R0 = self.state
-        sol = odeint(seiar, [min(0, S0-nu), E0, I0, A0, R0], 
+        sol = odeint(seiar, [max(0, S0-nu), E0, I0, A0, R0], 
                      np.linspace(0, self.dt, 101),
-                     args=(self.beta, self.psi, 0,
+                     args=(self.beta, self.psi, nu/self.nu_daily_max,
                            self.kappa, self.alpha, self.tau, 
                            self.p, self.eta, self.f, self.epsilon,
                            self.q, self.delta))
@@ -342,7 +352,7 @@ class SeiarEnvironment(gym.Env):
         S, E, I, A, R = new_state
         self.state = new_state
 
-        reward = - I - nu
+        reward = - I - nu 
         if np.sum(self.nus) > self.nu_total_max:
             reward -= 1000
         reward *= self.dt
@@ -354,6 +364,7 @@ class SeiarEnvironment(gym.Env):
         done = True if self.time >= self.tf else False
         return (np.array(new_state, dtype=np.float32), reward, done, False, {})
 
+    
     @property
     def dynamics(self):
         df = pd.DataFrame(dict(
