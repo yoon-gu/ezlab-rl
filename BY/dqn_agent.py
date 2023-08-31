@@ -36,9 +36,6 @@ class Agent():
         self.action_size = action_size
         self.seed = random.seed(seed)
 
-        # self.q_target_log = pd.DataFrame(columns=["Step"] + [f"Q_target_{i}" for i in range(action_size)])
-        # self.q_expected_log = pd.DataFrame(columns=["Step"] + [f"Q_expected_{i}" for i in range(action_size)])
-
         # Q-Network
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
         self.qnetwork_target = QNetwork(state_size, action_size, seed).to(device)
@@ -110,27 +107,19 @@ class Agent():
          # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)
   
-        # Log the loss
-        # self.log_loss(step, loss.item())
-
-        # # Log Q-target values and Q-expected values
-        # q_targets = Q_targets.cpu().data.numpy()
-        # self.log_q_target_values(step, q_targets)
-
-        # q_expected_values = Q_expected.cpu().data.numpy()
-        # self.log_q_expected_values(step, q_expected_values)
         self.optimizer.zero_grad()
+        # ---------- gradient ----------------- #
         gradient_dict = {}
         gradient_directions = {}
         loss.backward()
-        # 각 파라미터에 대한 그래디언트 확인
+        # 각 파라미터에 대한 그래디언트 dictionary
         for name, param in self.qnetwork_local.named_parameters():
             if param.grad is not None:
                 gradient_l2norm = param.grad.norm()
                 gradient_dict[name] = gradient_l2norm.item()
                 gradient_direction = "Positive" if (param.grad > 0).all() else "Negative"
                 gradient_directions[name] = gradient_direction
-                
+        # -------------------------------------- #        
         self.optimizer.step()
 
         # ------------------- update target network ------------------- #
@@ -148,47 +137,6 @@ class Agent():
         """
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau*local_param.data + (1.0-tau)*target_param.data)
-   
-    # # ----------- for loss - log -------------- #
-    # def log_loss(self, step, loss_value):
-    #     # Append the new loss value to the CSV file
-    #     with open('losses.csv', 'a', newline='') as csvfile:
-    #         csvwriter = csv.writer(csvfile)
-    #         csvwriter.writerow([step, loss_value])    
-    # #def log_loss(self, step, loss_value, experiences):
-    #     # Load existing CSV file or create a new one if it doesn't exist
-    #     try:
-    #         df = pd.read_csv('losses.csv')
-    #     except FileNotFoundError:
-    #         df = pd.DataFrame(columns=['Step', 'Loss'])
-    #         #df = pd.DataFrame(columns=['Step', 'Loss', 'States', 'Actions', 'Rewards', 'Next_States', 'Dones'])
-
-    #     # Append the new loss value to the DataFrame
-    #     new_entry = pd.DataFrame({
-    #     'Step': [step],
-    #     'Loss': [loss_value],
-    #     # 'States': [str(experiences[0])],
-    #     # 'Actions': [str(experiences[1])],
-    #     # 'Rewards': [str(experiences[2])],
-    #     # 'Next_States': [str(experiences[3])],
-    #     # 'Dones': [str(experiences[4])]
-    #     })
-    #     df = pd.concat([df, new_entry], ignore_index=True)
-
-    #     # Save the updated DataFrame back to the CSV file
-    #     df.to_csv('losses.csv', index=False)
-
-    # def log_q_target_values(self, step, q_targets):
-    #     q_target_entry = {"Step": step}
-    #     q_target_entry.update({f"Q_target_{i}": value for i, value in enumerate(q_targets)})
-    #     self.q_target_log = pd.concat([self.q_target_log, pd.DataFrame(q_target_entry, index=[0])], ignore_index=True)
-    #     self.q_target_log.to_csv('q_target_log.csv', index=False)
-
-    # def log_q_expected_values(self, step, q_expected_values):
-    #     q_expected_entry = {"Step": step}
-    #     q_expected_entry.update({f"Q_expected_{i}": value for i, value in enumerate(q_expected_values)})
-    #     self.q_expected_log = pd.concat([self.q_expected_log, pd.DataFrame(q_expected_entry, index=[0])], ignore_index=True)
-    #     self.q_expected_log.to_csv('q_expected_log.csv', index=False)
 
 class ReplayBuffer:
     """Fixed-size buffer to store experience tuples."""
