@@ -1,3 +1,6 @@
+defaults:
+  - override hydra/launcher: joblib
+
 seiar:
   _target_: envs.SeiarEnvironment
   beta: 0
