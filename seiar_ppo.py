@@ -33,18 +33,19 @@ def main(conf: DictConfig):
                             # net_arch=[16, 32, 64, 16]
                         )
     model = PPO("MlpPolicy", train_env, verbose=0,
-                policy_kwargs=policy_kwargs)
+                policy_kwargs=policy_kwargs,
+                clip_range=conf.clip_range)
 
     eval_env = instantiate(conf.seiar)
     eval_callback = EvalCallback(
             eval_env,
-            eval_freq=1000,
+            eval_freq=300*300,
             verbose=0,
             warn=False,
             log_path='eval_log',
             best_model_save_path='best_model'
         )
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./checkpoints/',
+    checkpoint_callback = CheckpointCallback(save_freq=300*300, save_path='./checkpoints/',
                                              name_prefix='rl_model')
     callback = CallbackList([checkpoint_callback, eval_callback, ProgressBarCallback()])
 
