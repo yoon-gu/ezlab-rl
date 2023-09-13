@@ -3,7 +3,7 @@ defaults:
 
 seiar:
   _target_: envs.SeiarEnvironment
-  beta: 0
+  beta: 0.0000000132339796
   psi: 0.7
   nu_daily_max: 500000 # 1%
   nu_total_max: 5000000 # 10%
@@ -21,10 +21,11 @@ seiar:
   I0: 1
   A0: 0
   R0: 0
-  tf: 180
+  tf: 300
   dt: 1.0
 
-n_steps: 100000
+n_steps: 9_000_000
+clip_range: 0.2
 
 hydra:
   job:
