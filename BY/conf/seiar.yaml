@@ -1,0 +1,30 @@
+
+beta: 0           # why?? --> 돌아가는지 확인??
+psi: 0.7
+nu_daily_max: 500000 # 1%
+nu_total_max: 5000000 # 10%
+kappa: 0.7143
+alpha: 0.1667
+tau: 0.0
+p: 0.667
+eta: 0.1667
+f: 0.999
+epsilon: 0.0
+q: 0.5
+delta: 0.5
+S0: 50000000
+E0: 0
+I0: 1
+A0: 0
+tf: 300
+dt: 1.0
+  
+n_episodes: 100000
+eps_start: 1.0
+eps_end: 0.0
+eps_decay: 0.995
+# n_steps/tf = n_episodes
+  
+hydra:
+  job:
+    chdir: true

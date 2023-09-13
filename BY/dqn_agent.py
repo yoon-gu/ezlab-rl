@@ -103,6 +103,8 @@ class Agent():
 
         # Get expected Q values from local model
         Q_expected = self.qnetwork_local(states).gather(1, actions)
+        # Scailing Q_expected
+        Q_expected = Q_expected - rewards*(1+1e-8)
 
          # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)
@@ -124,7 +126,7 @@ class Agent():
 
         # ------------------- update target network ------------------- #
         self.soft_update(self.qnetwork_local, self.qnetwork_target, TAU)
-    
+#%%    
 
     def soft_update(self, local_model, target_model, tau):
         """Soft update model parameters.
