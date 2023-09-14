@@ -93,15 +93,13 @@ class Agent():
         """
         states, actions, rewards, next_states, dones = experiences
 
-        ## TODO: compute and minimize the loss
-        "*** YOUR CODE HERE ***"
-
         # Get max predicted Q values (for next states) from target model
-        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        Q_targets_next = Q_targets_next/self.scale
         # Compute Q targets for current states
         # Q-function > E(reward + gamma(최적정책))
         # 즉각 보상 + 에피소드가 끝날 때 까지 최적 정책을 따름으로 얻는 이익 * gamma
+        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+        Q_targets_next = Q_targets_next/self.scale
+
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
 
         # Get expected Q values from local model
@@ -111,15 +109,11 @@ class Agent():
         # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)
 
-        # for name, param in self.qnetwork_local.named_parameters():
-        #     if param.requires_grad:
-        #         print(f"Parameter name: {name}, Initial Value:\n{param.data}")
-
         self.optimizer.zero_grad()
-        # ---------- gradient ----------------- #
+        # ---------- for gradient check ----------------- #
         gradient_dict = {}
         gradient_l2norms = {}
-        gradient_directions = {}
+
         loss.backward()
         # 각 파라미터에 대한 그래디언트 dictionary
         for name, param in self.qnetwork_local.named_parameters():
@@ -127,8 +121,6 @@ class Agent():
                 gradient_dict[name] = param.grad
                 gradient_l2norm = param.grad.norm()
                 gradient_l2norms[name] = gradient_l2norm.item()
-                gradient_direction = "Positive" if (param.grad > 0).all() else "Negative"
-                gradient_directions[name] = gradient_direction
         # -------------------------------------- #        
         self.optimizer.step()
 
