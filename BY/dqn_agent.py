@@ -23,7 +23,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class Agent():
     """Interacts with and learns from the environment."""
 
-    def __init__(self, state_size, action_size, seed):
+    def __init__(self, state_size, action_size, seed, scale):
         """Initialize an Agent object.
 
         Params
@@ -35,6 +35,7 @@ class Agent():
         self.state_size = state_size
         self.action_size = action_size
         self.seed = random.seed(seed)
+        self.scale = scale
 
         # Q-Network
         self.qnetwork_local = QNetwork(state_size, action_size, seed).to(device)
@@ -97,7 +98,7 @@ class Agent():
 
         # Get max predicted Q values (for next states) from target model
         Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        Q_targets_next = Q_targets_next/1e7
+        Q_targets_next = Q_targets_next/self.scale
         # Compute Q targets for current states
         # Q-function > E(reward + gamma(최적정책))
         # 즉각 보상 + 에피소드가 끝날 때 까지 최적 정책을 따름으로 얻는 이익 * gamma
@@ -105,7 +106,7 @@ class Agent():
 
         # Get expected Q values from local model
         Q_expected = self.qnetwork_local(states).gather(1, actions)
-        Q_expected = Q_expected/1e7
+        Q_expected = Q_expected/self.scale
 
         # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)

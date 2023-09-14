@@ -109,7 +109,7 @@ def main(conf : DictConfig) -> None:
             reward = -I - nu
             if np.sum(self.nus) > self.nu_total_max:
                 reward -= 200000
-            reward = reward
+            reward = reward/self.scale
             reward *= self.dt
 
 
@@ -158,7 +158,7 @@ def main(conf : DictConfig) -> None:
     env = SeiarEnvironment()
     action_size = 2
     # seed = 0 : 고정
-    agent = Agent(state_size=4, action_size=action_size, seed=0)
+    agent = Agent(state_size=4, action_size=action_size, seed=0, scale=conf.scale)
     ## Parameters
     n_episodes=conf.n_episodes
     max_t=conf.tf
