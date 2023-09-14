@@ -74,6 +74,7 @@ class Agent():
         with torch.no_grad():
             action_values = self.qnetwork_local(state)
 
+        # 다음 훈련 단계에서 Q-network 업데이트 준비
         self.qnetwork_local.train()
 
         # Epsilon-greedy action selection
@@ -95,30 +96,35 @@ class Agent():
         "*** YOUR CODE HERE ***"
 
         # Get max predicted Q values (for next states) from target model
-        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)/1e7
         # Compute Q targets for current states
         # Q-function > E(reward + gamma(최적정책))
         # 즉각 보상 + 에피소드가 끝날 때 까지 최적 정책을 따름으로 얻는 이익 * gamma
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
+        Q_targets = Q_targets 
 
         # Get expected Q values from local model
         Q_expected = self.qnetwork_local(states).gather(1, actions)
-        # Scailing Q_expected
-        Q_expected = Q_expected - rewards*(1+1e-8)
 
-         # Compute loss 
+        # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)
-  
+
+        # for name, param in self.qnetwork_local.named_parameters():
+        #     if param.requires_grad:
+        #         print(f"Parameter name: {name}, Initial Value:\n{param.data}")
+
         self.optimizer.zero_grad()
         # ---------- gradient ----------------- #
         gradient_dict = {}
+        gradient_l2norms = {}
         gradient_directions = {}
         loss.backward()
         # 각 파라미터에 대한 그래디언트 dictionary
         for name, param in self.qnetwork_local.named_parameters():
             if param.grad is not None:
+                gradient_dict[name] = param.grad
                 gradient_l2norm = param.grad.norm()
-                gradient_dict[name] = gradient_l2norm.item()
+                gradient_l2norms[name] = gradient_l2norm.item()
                 gradient_direction = "Positive" if (param.grad > 0).all() else "Negative"
                 gradient_directions[name] = gradient_direction
         # -------------------------------------- #        
