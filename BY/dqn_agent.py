@@ -96,15 +96,16 @@ class Agent():
         "*** YOUR CODE HERE ***"
 
         # Get max predicted Q values (for next states) from target model
-        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)/1e7
+        Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
+        Q_targets_next = Q_targets_next/1e7
         # Compute Q targets for current states
         # Q-function > E(reward + gamma(최적정책))
         # 즉각 보상 + 에피소드가 끝날 때 까지 최적 정책을 따름으로 얻는 이익 * gamma
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
-        Q_targets = Q_targets 
 
         # Get expected Q values from local model
-        Q_expected = self.qnetwork_local(states).gather(1, actions)/1e7
+        Q_expected = self.qnetwork_local(states).gather(1, actions)
+        Q_expected = Q_expected/1e7
 
         # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)
