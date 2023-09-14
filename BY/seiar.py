@@ -66,6 +66,7 @@ def main(conf : DictConfig) -> None:
             #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
             self.tf = conf.tf
             self.dt = conf.dt
+            self.scale = conf.scale
             self.time = 0
             self.days = [self.time]
             self.history = [[conf.S0, conf.E0, conf.I0, conf.A0]]
@@ -87,6 +88,7 @@ def main(conf : DictConfig) -> None:
             #self.beta = 9.33520*1e-9        # R0 = 1.3
             #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
             self.dt = conf.dt
+            self.scale = conf.scale
             self.nus = []
             self.rewards = []
             self.histroy = [self.state]
@@ -103,25 +105,13 @@ def main(conf : DictConfig) -> None:
             S, E, I, A = new_state
             self.state = new_state
 
-            # reward case1
-            # reward = -I - nu
-            # if np.sum(self.nus) > self.nu_total_max:
-            #     reward -= 200000
-            # reward *= self.dt
-
-            # reward case2 uniform scaling
-            reward = - I - nu
+            # reward case
+            reward = -I - nu
             if np.sum(self.nus) > self.nu_total_max:
                 reward -= 200000
-            reward = reward/1e7
+            reward = reward/self.scale
             reward *= self.dt
 
-
-            # # reward case3
-            # reward = -I/100 - nu/5e7
-            # if np.sum(self.nus) > self.nu_total_max:
-            #     reward -= 10
-            # reward *= self.dt
 
             self.rewards.append(reward)
             self.days.append(self.time)
@@ -147,28 +137,30 @@ def main(conf : DictConfig) -> None:
         states = np.vstack((states, next_state))
         state = next_state
     time_stamp = np.append(time_stamp, max_t)
-    # plt.clf()
-    # fig, ax1 = plt.subplots()
-    # ax1.plot(time_stamp, states[:,0], '.-b', label = 'S')
-    # ax1.legend(loc='upper left')
-    # ax2 = ax1.twinx()
-    # ax2.plot(time_stamp, states[:,1], '.-y', label = 'L')
-    # ax2.plot(time_stamp, states[:,2], '.-r', label = 'I')
-    # ax2.plot(time_stamp, states[:,3], '.-g', label = 'A')
-    # ax2.legend(loc='lower right')
-    # plt.grid()
-    # plt.legend()
-    # plt.title('SLIAR model without control')
-    # plt.xlabel('day')
-    # plt.savefig('SLIAR_wo_control'+str(conf.dt)+'.png', dpi=300)
-    # plt.show(block=False)
+
+    # Plot w/o control
+    plt.clf()
+    fig, ax1 = plt.subplots()
+    ax1.plot(time_stamp, states[:,0], '.-b', label = 'S')
+    ax1.legend(loc='upper left')
+    ax2 = ax1.twinx()
+    ax2.plot(time_stamp, states[:,1], '.-y', label = 'L')
+    ax2.plot(time_stamp, states[:,2], '.-r', label = 'I')
+    ax2.plot(time_stamp, states[:,3], '.-g', label = 'A')
+    ax2.legend(loc='lower right')
+    plt.grid()
+    plt.legend()
+    plt.title('SLIAR model without control')
+    plt.xlabel('day')
+    plt.savefig('SLIAR_wo_control'+str(conf.dt)+'.png', dpi=300)
+    plt.show(block=False)
 
 
     # 2. Train DQN Agent
     env = SeiarEnvironment()
     action_size = 2
     # seed = 0 : 고정
-    agent = Agent(state_size=4, action_size=action_size, seed=0)
+    agent = Agent(state_size=4, action_size=action_size, seed=0, scale=conf.scale)
     ## Parameters
     n_episodes=conf.n_episodes
     max_t=conf.tf
@@ -189,13 +181,10 @@ def main(conf : DictConfig) -> None:
         states = state
         score = 0
         actions = []
-        # ACTIONSS = []
         time_stamp = np.arange(0, max_t, conf.dt)
         for t in time_stamp:
             action = agent.act(state, eps)
             actions.append(action)
-            # ACTION = ACTIONS[action]
-            # ACTIONSS = np.append(ACTIONSS, ACTION)
             next_state, reward, done, _ = env.step(action)
             agent.step(state, action, reward, next_state, done)
             states = np.vstack((states, next_state))
@@ -213,13 +202,13 @@ def main(conf : DictConfig) -> None:
         print('\rEpisode {}\tAverage Score: {:,.2f}'.format(i_episode, np.mean(scores_window)), end="")
         print('\rEpisode {}\tNow Score: {:,.2f}'.format(i_episode, score), end="")
 
-        if i_episode % 500 == 0:
+        if i_episode % 1000 == 0:
             print('\rEpisode {}\tAverage Score: {:,.2f}'.format(i_episode, np.mean(scores_window)))
             print(np.array(actions)[:5], eps)
             torch.save(agent.qnetwork_local.state_dict(), 'checkpoint'+str(i_episode)+'.pth')
     
 
-        if i_episode % 500 == 0:
+        if i_episode % 1000 == 0:
             plt.clf()
             plt.plot(scores)
             plt.grid()
@@ -237,9 +226,6 @@ def main(conf : DictConfig) -> None:
             plt.savefig(f'epsilon_{i_episode}.png', dpi=300)
             plt.show(block=False)        
 
-        # if i_episode > 3:
-        #     if score >= max(scores):
-        #         torch.save(agent.qnetwork_local.state_dict(), 'checkpoint'+str(i_episode)+'.pth')
 
     torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
 

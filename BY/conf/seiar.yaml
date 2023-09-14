@@ -18,7 +18,8 @@ I0: 1
 A0: 0
 tf: 300
 dt: 1.0
-  
+scale: 10000000
+
 n_episodes: 100000
 eps_start: 1.0
 eps_end: 0.0
