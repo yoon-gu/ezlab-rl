@@ -66,6 +66,7 @@ def main(conf : DictConfig) -> None:
             #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
             self.tf = conf.tf
             self.dt = conf.dt
+            self.scale = conf.scale
             self.time = 0
             self.days = [self.time]
             self.history = [[conf.S0, conf.E0, conf.I0, conf.A0]]
@@ -87,6 +88,7 @@ def main(conf : DictConfig) -> None:
             #self.beta = 9.33520*1e-9        # R0 = 1.3
             #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
             self.dt = conf.dt
+            self.scale = conf.scale
             self.nus = []
             self.rewards = []
             self.histroy = [self.state]
@@ -103,25 +105,12 @@ def main(conf : DictConfig) -> None:
             S, E, I, A = new_state
             self.state = new_state
 
-            # reward case1
-            # reward = -I - nu
-            # if np.sum(self.nus) > self.nu_total_max:
-            #     reward -= 200000
-            # reward *= self.dt
-
-            # reward case2 uniform scaling
-            reward = - I - nu
+            # reward case
+            reward = -I - nu
             if np.sum(self.nus) > self.nu_total_max:
-                reward -= 200000
-            reward = reward/1e7
+                reward -= 200000/self.scale
             reward *= self.dt
 
-
-            # # reward case3
-            # reward = -I/100 - nu/5e7
-            # if np.sum(self.nus) > self.nu_total_max:
-            #     reward -= 10
-            # reward *= self.dt
 
             self.rewards.append(reward)
             self.days.append(self.time)
