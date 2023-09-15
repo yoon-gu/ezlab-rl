@@ -21,7 +21,7 @@ def sir(y, t, beta, gamma, u):
 
 
 class SirEnvironment:
-    def __init__(self, S0=990, I0=10):
+    def __init__(self, S0=9999990, I0=10):
         # S0 = 990
         # I0 = 10
         # R0 = 0
@@ -30,13 +30,13 @@ class SirEnvironment:
         # gamma = 0.5
 
         self.state = np.array([S0, I0])
-        self.beta = 0.002
-        self.gamma = 0.5
+        self.beta = 0.00000007
+        self.gamma = 1/10
 
-    def reset(self, S0=990, I0=10):
+    def reset(self, S0=9999990, I0=10):
         self.state = np.array([S0, I0])
-        self.beta = 0.002
-        self.gamma = 0.5
+        self.beta = 0.00000007
+        self.gamma = 1/10
         return self.state
 
     def step(self, action):
@@ -54,7 +54,11 @@ class SirEnvironment:
         # reward design -I
         # reward maximization이 목표이므로, I = 0 이 되는게 베스트
         # 따라서 reward를 음수로 표현
-        reward = - I 
+        # option1
+        # reward = - I
+        # option2
+        reward = - I - action*S/1e6
+        
         # new_state[1] : I < 1.0 이면 멈춤
         done = True if new_state[1] < 1.0 else False
         return (new_state, reward, done, 0)
@@ -65,8 +69,8 @@ plt.rcParams['figure.figsize'] = (8, 4.5)
 # 1. Without Control
 env = SirEnvironment()
 state = env.reset()
-# t = 30days
-max_t = 30
+# t = 300days
+max_t = 300
 states = state
 # action은 없는 상태 why? without control 이니까
 actions = []
@@ -95,10 +99,9 @@ plt.show(block=False)
 # 2. Train DQN Agent
 env = SirEnvironment()
 # action | 0 : no vacc. 1 : vacc.
-agent = Agent(state_size=2, action_size=2, seed=0)
+agent = Agent(state_size=2, action_size=2, seed=0, scale=1)
 ## Parameters
-n_episodes=2000
-max_t=30
+n_episodes=7000
 eps_start=1.0 # Too large epsilon for a stable learning
 eps_end=0.001
 eps_decay=0.99
@@ -114,7 +117,6 @@ for i_episode in range(1, n_episodes+1):
     for t in range(max_t):
         # epsilon - greedy로 action 탐색 (policy)
         action = agent.act(state, eps)
-        print(action)
         actions.append(action)
         # Taking action
         next_state, reward, done, _ = env.step(action)
@@ -132,7 +134,7 @@ for i_episode in range(1, n_episodes+1):
 
     
     print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)), end="")
-    if i_episode % 5 == 0:
+    if i_episode % 500 == 0:
         print('\rEpisode {}\tAverage Score: {:.2f}'.format(i_episode, np.mean(scores_window)))
         print(np.array(actions)[:5], eps)
     if np.mean(scores_window)>=200.0:
@@ -155,8 +157,8 @@ plt.show(block=False)
 # 3. Visualize Controlled SIR Dynamics
 agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
 env = SirEnvironment()
+max_t = 100
 state = env.reset()
-max_t = 30
 states = state
 actions = []
 for t in range(max_t):
