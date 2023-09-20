@@ -118,20 +118,35 @@ def main(conf: DictConfig):
             max_val = cum_reward
             best_checkpoint = path
 
-        plt.figure(figsize=(8,8))
-        plt.subplot(3, 1, 1)
-        plt.title(f"R = {df.rewards.sum():,.4f}")
-        sns.lineplot(data=df, x='days', y='infected', color='r')
-        plt.xticks(color='w')
-        plt.subplot(3, 1, 2)
-        sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre')
-        plt.ylim([-0.001, max(conf.sir.v_max * 1.1, 0.01)])
-        plt.xticks(color='w')
-        plt.subplot(3, 1, 3)
-        sns.lineplot(data=df, x='days', y='rewards', color='g')
-        plt.savefig(f"figures/{path.replace('.zip', '.png')}")
-        plt.close()
+        # plt.figure(figsize=(8,8))
+        # plt.subplot(3, 1, 1)
+        # plt.title(f"R = {df.rewards.sum():,.4f}")
+        # sns.lineplot(data=df, x='days', y='infected', color='r')
+        # plt.xticks(color='w')
+        # plt.subplot(3, 1, 2)
+        # sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre')
+        # plt.ylim([-0.001, max(conf.sir.v_max * 1.1, 0.01)])
+        # plt.xticks(color='w')
+        # plt.subplot(3, 1, 3)
+        # sns.lineplot(data=df, x='days', y='rewards', color='g')
+        # plt.savefig(f"figures/{path.replace('.zip', '.png')}")
+        # plt.close()
 
+        fig, axes = plt.subplots(nrows=4, ncols=1, figsize=(8, 8), sharex=True)
+        plt.suptitle(f"R = {df.rewards.sum():,.4f}")
+        sns.lineplot(data=df, x='days', y='susceptible', color='r', ax=axes[0])
+
+        sns.lineplot(data=df, x='days', y='infected', color='r', ax=axes[1])
+
+        sns.lineplot(data=df, x='days', y='nus', color='k', drawstyle='steps-pre', ax=axes[2])
+        # axes[2].set_ylim([-conf.sir.nu_daily_max*0.1, max(conf.sir.nu_daily_max * 1.2, 0.01)])
+
+        sns.lineplot(data=df, x='days', y='rewards', color='g', ax=axes[3])
+
+        plt.subplots_adjust(hspace=0.25)
+
+        plt.savefig(f"figures/best.png")
+        plt.close()
 
 
     # Visualize Controlled SIR Dynamics
