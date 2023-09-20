@@ -34,7 +34,7 @@ def main(conf: DictConfig):
     train_env = Monitor(train_env, log_dir)
     policy_kwargs = dict(
                             # activation_fn=torch.nn.ReLU,
-                            net_arch=[16, 32, 64, 16]
+                            # net_arch=[16, 32, 64, 16]
                         )
     model = PPO("MlpPolicy", train_env, verbose=0,
                 policy_kwargs=policy_kwargs)
@@ -42,13 +42,13 @@ def main(conf: DictConfig):
     eval_env = instantiate(conf.sir)
     eval_callback = EvalCallback(
             eval_env,
-            eval_freq=1000,
+            eval_freq=300*300,
             verbose=0,
             warn=False,
             log_path='eval_log',
             best_model_save_path='best_model'
         )
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path='./checkpoints/',
+    checkpoint_callback = CheckpointCallback(save_freq=300*300, save_path='./checkpoints/',
                                              name_prefix='rl_model')
     callback = CallbackList([checkpoint_callback, eval_callback, ProgressBarCallback()])
 
@@ -64,25 +64,41 @@ def main(conf: DictConfig):
 
     # Visualize Controlled SIR Dynamics
     model = PPO.load(f'best_model/best_model.zip')
-    state = eval_env.reset()
+    state, _ = eval_env.reset()
     done = False
     while not done:
         action, _ = model.predict(state, deterministic=True)
-        state, _, done, _ = eval_env.step(action)
+        state, _, done, _, _ = eval_env.step(action)
 
     df = eval_env.dynamics
     best_reward = df.rewards.sum()
-    plt.figure(figsize=(8,8))
-    plt.subplot(3, 1, 1)
-    plt.title(f"R = {df.rewards.sum():,.4f}")
-    sns.lineplot(data=df, x='days', y='infected', color='r')
-    plt.xticks(color='w')
-    plt.subplot(3, 1, 2)
-    sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre')
-    plt.ylim([-0.001, max(conf.sir.v_max * 1.1, 0.01)])
-    plt.xticks(color='w')
-    plt.subplot(3, 1, 3)
-    sns.lineplot(data=df, x='days', y='rewards', color='g')
+    # plt.figure(figsize=(8,8))
+    # plt.subplot(3, 1, 1)
+    # plt.title(f"R = {df.rewards.sum():,.4f}")
+    # sns.lineplot(data=df, x='days', y='infected', color='r')
+    # plt.xticks(color='w')
+    # plt.subplot(3, 1, 2)
+    # sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre')
+    # plt.ylim([-0.001, max(conf.sir.v_max * 1.2, 0.01)])
+    # plt.xticks(color='w')
+    # plt.subplot(3, 1, 3)
+    # sns.lineplot(data=df, x='days', y='rewards', color='g')
+    # plt.savefig(f"figures/best.png")
+    # plt.close()
+    
+    fig, axes = plt.subplots(nrows=4, ncols=1, figsize=(8, 8), sharex=True)
+    plt.suptitle(f"R = {df.rewards.sum():,.4f}")
+    sns.lineplot(data=df, x='days', y='susceptible', color='r', ax=axes[0])
+
+    sns.lineplot(data=df, x='days', y='infected', color='r', ax=axes[1])
+
+    sns.lineplot(data=df, x='days', y='nus', color='k', drawstyle='steps-pre', ax=axes[2])
+    # axes[2].set_ylim([-conf.sir.nu_daily_max*0.1, max(conf.sir.nu_daily_max * 1.2, 0.01)])
+
+    sns.lineplot(data=df, x='days', y='rewards', color='g', ax=axes[3])
+
+    plt.subplots_adjust(hspace=0.25)
+
     plt.savefig(f"figures/best.png")
     plt.close()
 
