@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 
-def sir(y, t, beta, gamma, u):
+def sir(y, t, beta, gamma):
     S, I = y
-    dydt = np.array([-beta * S * I - u * S, beta * S * I - gamma * I])
+    dydt = np.array([-beta * S * I, beta * S * I - gamma * I])
     return dydt
 
 class SirEnvironment(gym.Env):
@@ -59,10 +59,10 @@ class SirEnvironment(gym.Env):
         self.actions = []
         self.rewards = []
         self.state = np.array([self.S0, self.I0])
-        return np.array(self.state, dtype=np.float32)
+        return np.array(self.state, dtype=np.float32), {}
 
     def action2vaccine(self, action):
-        return self.v_min + self.v_max * (action[0] + 1.0) / 2.0
+        return self.v_min + (self.v_max - self.v_min) * (action[0] + 1.0) / 2.0
 
     def step(self, action):
         if self.continuous:
@@ -71,12 +71,17 @@ class SirEnvironment(gym.Env):
             vaccine = self.v_min if action == 0 else self.v_max
         self.actions.append(vaccine)
 
-        sol = odeint(sir, self.state, np.linspace(0, self.dt, 101), args=(self.beta, self.gamma, vaccine))
+        S0, I0 = self.state
+        sol = odeint(sir, [max(0, S0-vaccine), I0],
+                     np.linspace(0, self.dt, 101),
+                     args=(self.beta, self.gamma))
+        # take vaccine at once for each day
+        
         self.time += self.dt
         new_state = sol[-1, :]
-        S0, I0 = self.state
         S, I = new_state
         self.state = new_state
+        
         reward = - I - self.vaccine_importance * vaccine
         reward *= self.dt
 
@@ -86,7 +91,7 @@ class SirEnvironment(gym.Env):
         self.infected.append(I)
 
         done = True if self.time >= self.tf else False
-        return (np.array(new_state, dtype=np.float32), reward, done, {})
+        return (np.array(new_state, dtype=np.float32), reward, done, False, {})
 
     @property
     def dynamics(self):
