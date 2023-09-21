@@ -21,7 +21,7 @@ def sir(y, t, beta, gamma, u):
 
 
 class SirEnvironment:
-    def __init__(self, S0=9999990, I0=10):
+    def __init__(self, S0=990, I0=10):
         # S0 = 990
         # I0 = 10
         # R0 = 0
@@ -30,13 +30,15 @@ class SirEnvironment:
         # gamma = 0.5
 
         self.state = np.array([S0, I0])
-        self.beta = 0.00000007
-        self.gamma = 1/10
+        self.beta = 0.002
+        self.gamma = 0.5
+        # self.beta = 0.00000007
+        # self.gamma = 1/10
 
-    def reset(self, S0=9999990, I0=10):
+    def reset(self, S0=990, I0=10):
         self.state = np.array([S0, I0])
-        self.beta = 0.00000007
-        self.gamma = 1/10
+        self.beta = 0.002
+        self.gamma = 0.5
         return self.state
 
     def step(self, action):
@@ -70,7 +72,7 @@ plt.rcParams['figure.figsize'] = (8, 4.5)
 env = SirEnvironment()
 state = env.reset()
 # t = 300days
-max_t = 300
+max_t = 30
 states = state
 # action은 없는 상태 why? without control 이니까
 actions = []
@@ -157,7 +159,7 @@ plt.show(block=False)
 # 3. Visualize Controlled SIR Dynamics
 agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
 env = SirEnvironment()
-max_t = 100
+max_t = 30
 state = env.reset()
 states = state
 actions = []
