@@ -96,11 +96,11 @@ for i in [0]:
             
 
             def step(self, action):
-                nu = action
+                nu = self.nu_min if action == 0 else self.nu_daily_max
                 self.nus.append(nu)
                 S0, E0, I0, A0 = self.state
                 sol = odeint(seiar, [max(0, S0-nu), E0, I0, A0], np.linspace(0, self.dt, 101),
-                            args=(self.beta, self.psi, nu, self.kappa, self.alpha, self.tau, self.p, self.eta, self.f, self.epsilon, self.q, self.delta))
+                            args=(self.beta, self.psi, 0, self.kappa, self.alpha, self.tau, self.p, self.eta, self.f, self.epsilon, self.q, self.delta))
                 new_state = sol[-1, :]
                 S, E, I, A = new_state
                 self.state = new_state
@@ -126,7 +126,7 @@ for i in [0]:
 
         env = SeiarEnvironment()
         state = env.reset()
-        max_t = 180
+        max_t = 300
         states = state
         actions = []
         score = 0
@@ -161,7 +161,7 @@ for i in [0]:
 
         # For action plot
         plt.clf()
-        plt.plot(actions_, 'k+--', label = 'Vaccine')
+        plt.plot(actions_*500000, 'k+--', label = 'Vaccine')
         plt.grid()
         plt.legend()
         plt.title(f'Control:{score}')
@@ -175,7 +175,7 @@ for i in [0]:
         plt.xticks(color='w')
         
         plt.subplot(3, 1, 2)
-        plt.plot(actions_, '-k', label = 'Vaccine')
+        plt.plot(actions_*500000, '-k', label = 'Vaccine')
         plt.ylabel('Vaccination')
         #plt.ylim([0.0, 0.01])
         plt.xticks(color='w')
