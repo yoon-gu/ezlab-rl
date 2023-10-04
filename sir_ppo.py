@@ -42,13 +42,13 @@ def main(conf: DictConfig):
     eval_env = instantiate(conf.sir)
     eval_callback = EvalCallback(
             eval_env,
-            eval_freq=30*100,
+            eval_freq=30*500,
             verbose=0,
             warn=False,
             log_path='eval_log',
             best_model_save_path='best_model'
         )
-    checkpoint_callback = CheckpointCallback(save_freq=30*100, save_path='./checkpoints/',
+    checkpoint_callback = CheckpointCallback(save_freq=30*500, save_path='./checkpoints/',
                                              name_prefix='rl_model')
     callback = CallbackList([checkpoint_callback, eval_callback, ProgressBarCallback()])
 
@@ -94,6 +94,7 @@ def main(conf: DictConfig):
 
     sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre', ax=axes[2])
     # axes[2].set_ylim([-conf.sir.nu_daily_max*0.1, max(conf.sir.nu_daily_max * 1.2, 0.01)])
+    axes[2].set_ylim([-0.1, 1.1])
 
     sns.lineplot(data=df, x='days', y='rewards', color='g', ax=axes[3])
 
@@ -140,6 +141,7 @@ def main(conf: DictConfig):
 
         sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre', ax=axes[2])
         # axes[2].set_ylim([-conf.sir.nu_daily_max*0.1, max(conf.sir.nu_daily_max * 1.2, 0.01)])
+        axes[2].set_ylim([-0.1, 1.1])
 
         sns.lineplot(data=df, x='days', y='rewards', color='g', ax=axes[3])
 
