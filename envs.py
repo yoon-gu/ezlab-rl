@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 
-def sir(y, t, beta, gamma):
+def sir(y, t, beta, gamma, nu):
     S, I = y
-    dydt = np.array([-beta * S * I, beta * S * I - gamma * I])
+    dydt = np.array([-beta * S * I - nu * S, beta * S * I - gamma * I])
     return dydt
 
 class SirEnvironment(gym.Env):
@@ -72,17 +72,16 @@ class SirEnvironment(gym.Env):
         self.actions.append(vaccine)
 
         S0, I0 = self.state
-        sol = odeint(sir, [max(0, S0-vaccine), I0],
+        sol = odeint(sir, [S0, I0],
                      np.linspace(0, self.dt, 101),
-                     args=(self.beta, self.gamma))
-        # take vaccine at once for each day
+                     args=(self.beta, self.gamma, vaccine * S0))
         
         self.time += self.dt
         new_state = sol[-1, :]
         S, I = new_state
         self.state = new_state
         
-        reward = - I - self.vaccine_importance * vaccine
+        reward = - I - self.vaccine_importance * vaccine * S - vaccine**2
         reward *= self.dt
 
         self.rewards.append(reward)

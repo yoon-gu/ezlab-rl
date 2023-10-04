@@ -1,18 +1,18 @@
 sir:
   _target_: envs.SirEnvironment
-  population: 1000
-  beta: 0.002
-  gamma: 0.5
-  S0: 990
-  I0: 10
+  population: 50_000_001
+  beta: 0.0000000132339796
+  gamma: 0.33084949
+  S0: 50_000_000
+  I0: 1
   v_min: 0.0
   v_max: 1.0
-  vaccine_importance: 10.0
+  vaccine_importance: 1.0
   continuous: true
-  tf: 30
+  tf: 300
   dt: 1.0
 
-n_steps: 10000
+n_steps: 6_000_000
 
 
 defaults:
