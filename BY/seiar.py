@@ -107,8 +107,8 @@ def main(conf : DictConfig) -> None:
 
             # reward case
             reward = -I - nu
-            if np.sum(self.nus) > self.nu_total_max:
-                reward -= 200000
+            # if np.sum(self.nus) > self.nu_total_max:
+            #     reward -= 200000
             reward = reward/self.scale
             reward *= self.dt
 

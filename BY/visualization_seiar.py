@@ -16,11 +16,11 @@ import yaml
 for i in [0]:
     for epi in np.arange(1000,101000,1000):
         # for homemac : boyeonkim
-        os.chdir("/Users/boyeon/research/ezlab-rl/BY")
+        os.chdir("/Users/boyeonkim/research/ezlab-rl/BY")
         # 현재 작업 경로 불러오기
         npath = os.getcwd()
         # 작업 경로 추가
-        PATH = npath + f'/outputs/2023-09-20/19-16-05'
+        PATH = npath + f'/outputs/2023-10-05/04-12-54'
         # 추가한 경로로 변경
         os.chdir(PATH)
         # 폴더만들기
@@ -68,7 +68,8 @@ for i in [0]:
                 self.I0 = 1
                 self.A0 = 0
                 self.R0 = 1.9847
-                self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
+                self.beta = 1.32339796*1e-8      # R0 = 1.9847
+                #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
                 self.tf = 180
                 self.dt = 1.0
                 self.time = 0
@@ -87,7 +88,8 @@ for i in [0]:
                 self.q = 0.5
                 self.delta = 0.5
                 self.R0 = 1.9847
-                self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
+                self.beta = 1.32339796*1e-8      # R0 = 1.9847
+                #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
                 self.dt = 1.0
                 self.nus = []
                 self.rewards = []
@@ -107,8 +109,8 @@ for i in [0]:
 
                 # reward case
                 reward = -I - nu
-                if np.sum(self.nus) > self.nu_total_max:
-                    reward -= 200000
+                # if np.sum(self.nus) > self.nu_total_max:
+                #     reward -= 200000
                 reward = reward/1e7
                 reward *= self.dt
 
@@ -157,7 +159,7 @@ for i in [0]:
         plt.legend()
         plt.title('SLIAR model with control')
         plt.xlabel('day')
-        plt.savefig(f"{npath}/outputs/2023-09-20/19-16-05/figures/SLIAR_w_control_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-05/04-12-54/figures/SLIAR_w_control_{str(epi)}.png", dpi=300)
 
         # For action plot
         plt.clf()
@@ -165,7 +167,7 @@ for i in [0]:
         plt.grid()
         plt.legend()
         plt.title(f'Control:{score}')
-        plt.savefig(f"{npath}/outputs/2023-09-20/19-16-05/figures/control_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-05/04-12-54/figures/control_{str(epi)}.png", dpi=300)
 
         plt.figure(figsize=(8,8))
         plt.subplot(3, 1, 1)
@@ -183,5 +185,5 @@ for i in [0]:
         plt.subplot(3, 1, 3)
         plt.plot(time_stamp, states[:,0], '.-b', label = 'S')
         plt.ylabel('Susceptible')
-        plt.savefig(f"{npath}/outputs/2023-09-20/19-16-05/figures/all_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-05/04-12-54/figures/all_{str(epi)}.png", dpi=300)
 
