@@ -30,34 +30,40 @@ class SirEnvironment:
         # gamma = 0.5
 
         self.state = np.array([S0, I0])
-        self.beta = 0.00000007
+        self.beta = 0.000000036
         self.gamma = 1/10
+        self.nu_daily_max = 500000
+        self.nu_total_max = 5000000
+        self.nu_min = 0.0
+        self.nus = []
+        # self.beta = 0.00000007
+        # self.gamma = 1/10
 
     def reset(self, S0=9999990, I0=10):
         self.state = np.array([S0, I0])
-        self.beta = 0.00000007
+        self.beta = 0.000000036
         self.gamma = 1/10
+        self.nus = []
         return self.state
 
     def step(self, action):
+        nu = self.nu_min if action == 0 else self.nu_daily_max
+        self.nus.append(nu)
+        S0, I0 = self.state
         # sol = odeint(df, initial, dt, args = (beta, gamma, action))
-        sol = odeint(sir, self.state, np.linspace(0, 1, 101), args=(self.beta, self.gamma, action))
+        sol = odeint(sir, [max(0, S0-nu),I0], np.linspace(0, 1, 101), args=(self.beta, self.gamma, action))
         # 계산하고 제일 끝  state가 new
         new_state = sol[-1, :]
-        # 이전 state
-        S0, I0 = self.state
         # new state
         S, I = new_state
         # state update
         self.state = new_state
 
-        # reward design -I
-        # reward maximization이 목표이므로, I = 0 이 되는게 베스트
-        # 따라서 reward를 음수로 표현
-        # option1
-        # reward = - I
-        # option2
-        reward = - I - action*S/1e6
+        # reward case
+        reward = -I - nu
+        if np.sum(self.nus) > self.nu_total_max:
+            reward -= 200000
+        reward = reward/1e7
         
         # new_state[1] : I < 1.0 이면 멈춤
         done = True if new_state[1] < 1.0 else False
@@ -99,7 +105,7 @@ plt.show(block=False)
 # 2. Train DQN Agent
 env = SirEnvironment()
 # action | 0 : no vacc. 1 : vacc.
-agent = Agent(state_size=2, action_size=2, seed=0, scale=1)
+agent = Agent(state_size=2, action_size=2, seed=0, scale=1e7)
 ## Parameters
 n_episodes=7000
 eps_start=1.0 # Too large epsilon for a stable learning
@@ -157,7 +163,7 @@ plt.show(block=False)
 # 3. Visualize Controlled SIR Dynamics
 agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
 env = SirEnvironment()
-max_t = 100
+max_t = 300
 state = env.reset()
 states = state
 actions = []
