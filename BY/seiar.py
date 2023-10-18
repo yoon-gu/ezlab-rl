@@ -106,12 +106,11 @@ def main(conf : DictConfig) -> None:
             self.state = new_state
 
             # reward case
-            reward = -I - nu
+            reward = -I - (nu/1e7)
             # if np.sum(self.nus) > self.nu_total_max:
-            #     reward -= 200000
+            #     reward -= 10000
             reward = reward/self.scale
             reward *= self.dt
-
 
             self.rewards.append(reward)
             self.days.append(self.time)
