@@ -106,7 +106,10 @@ def main(conf : DictConfig) -> None:
             self.state = new_state
 
             # reward case
-            reward = -I - (nu/1e7)
+            # if sum(nus) > nu_total_max ==> penalty
+            # penalty에도 weight를 준다.
+            penalty = 1e-5*abs(max((0, sum(self.nus)-self.nu_total_max)))
+            reward = - I - penalty
             # if np.sum(self.nus) > self.nu_total_max:
             #     reward -= 10000
             reward = reward/self.scale
@@ -226,7 +229,7 @@ def main(conf : DictConfig) -> None:
             plt.show(block=False)        
 
 
-    torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+    torch.save(agent.qnetwork_local.state_dict(), f'checkpoint.pth{i_episode+1000}')
 
     actions_window = np.array(ACTIONS_window)
     df1 = pd.DataFrame(actions_window)

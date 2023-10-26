@@ -14,13 +14,13 @@ import pandas as pd
 import yaml
 
 for i in [0]:
-    for epi in np.arange(1000,21000,1000):
+    for epi in np.arange(1000,20000,1000):
         # for homemac : boyeonkim
         os.chdir("/Users/boyeonkim/research/ezlab-rl/BY")
         # 현재 작업 경로 불러오기
         npath = os.getcwd()
         # 작업 경로 추가
-        PATH = npath + f'/outputs/2023-10-19/06-20-49'
+        PATH = npath + f'/outputs/2023-10-26/04-59-55'
         # 추가한 경로로 변경
         os.chdir(PATH)
         # 폴더만들기
@@ -70,7 +70,7 @@ for i in [0]:
                 self.R0 = 1.9847
                 self.beta = 1.32339796*1e-8      # R0 = 1.9847
                 #self.beta = self.R0 / (self.S0 * ((self.epsilon / self.kappa) + ((1 - self.q) * self.p / self.alpha) + (self.delta * (1 - self.p) / self.eta)))
-                self.tf = 180
+                self.tf = 300
                 self.dt = 1.0
                 self.time = 0
                 self.days = [self.time]
@@ -107,12 +107,14 @@ for i in [0]:
                 S, E, I, A = new_state
                 self.state = new_state
 
-                # reward case
-                reward = -I - (nu/1e7)
-                if np.sum(self.nus) > self.nu_total_max:
-                    reward -= 10000
+                # if sum(nus) > nu_total_max ==> penalty
+                # penalty에도 weight를 준다.
+                penalty = 1e-5*abs(max((0, sum(self.nus)-self.nu_total_max)))
+                reward = - I - penalty
+                # if np.sum(self.nus) > self.nu_total_max:
+                #     reward -= 10000
                 reward = reward/1
-                reward *= self.dt 
+                reward *= self.dt
 
                 self.rewards.append(reward)
                 self.days.append(self.time)
@@ -159,7 +161,7 @@ for i in [0]:
         plt.legend()
         plt.title('SLIAR model with control')
         plt.xlabel('day')
-        plt.savefig(f"{npath}/outputs/2023-10-19/06-20-49/figures/SLIAR_w_control_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-26/04-59-55/figures/SLIAR_w_control_{str(epi)}.png", dpi=300)
 
         # For action plot
         plt.clf()
@@ -167,7 +169,7 @@ for i in [0]:
         plt.grid()
         plt.legend()
         plt.title(f'Control:{score}')
-        plt.savefig(f"{npath}/outputs/2023-10-19/06-20-49/figures/control_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-26/04-59-55/figures/control_{str(epi)}.png", dpi=300)
 
         plt.figure(figsize=(8,8))
         plt.subplot(3, 1, 1)
@@ -185,5 +187,5 @@ for i in [0]:
         plt.subplot(3, 1, 3)
         plt.plot(time_stamp, states[:,0], '.-b', label = 'S')
         plt.ylabel('Susceptible')
-        plt.savefig(f"{npath}/outputs/2023-10-19/06-20-49/figures/all_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-26/04-59-55/figures/all_{str(epi)}.png", dpi=300)
 
