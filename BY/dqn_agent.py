@@ -2,7 +2,7 @@ import numpy as np
 import random
 from collections import namedtuple, deque
 import csv
-from model import QNetwork
+from model_He import QNetwork
 import pdb
 
 import torch
@@ -15,7 +15,7 @@ BATCH_SIZE = 64        # minibatch size (머신 학습시 사용되는 미니배
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
 LR = 1e-6               # learning rate
-UPDATE_EVERY = 1        # how often to update the network
+UPDATE_EVERY = 4        # how often to update the network
 
 # 학습을 GPU로 할 경우 "cuda:0", 그렇지 않을 경우 "CPU"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
