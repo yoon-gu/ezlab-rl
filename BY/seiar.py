@@ -108,7 +108,7 @@ def main(conf : DictConfig) -> None:
             # reward case
             # if sum(nus) > nu_total_max ==> penalty
             # penalty에도 weight를 준다.
-            penalty = 1e-5*abs(max((0, sum(self.nus)-self.nu_total_max)))
+            penalty = abs(max((0, sum(self.nus)-self.nu_total_max)))**2
             reward = - I - penalty
             # if np.sum(self.nus) > self.nu_total_max:
             #     reward -= 10000
