@@ -20,7 +20,7 @@ for i in [0]:
         # 현재 작업 경로 불러오기
         npath = os.getcwd()
         # 작업 경로 추가
-        PATH = npath + f'/outputs/2023-10-26/11-00-32'
+        PATH = npath + f'/outputs/2023-10-30/16-31-19'
         # 추가한 경로로 변경
         os.chdir(PATH)
         # 폴더만들기
@@ -37,7 +37,7 @@ for i in [0]:
         # actions_str = list(product(nu_str, tau_str, sigma_str))
         # Environment
         action_size = 2
-        agent = Agent(state_size=4, action_size=action_size, seed=0, scale=2500000000000000000)
+        agent = Agent(state_size=4, action_size=action_size, seed=0, scale=1)
         
         def seiar(y, t, beta, psi, nu, kappa, alpha, tau, p, eta, f, epsilon, q, delta):
             S, E, I, A = y
@@ -110,11 +110,11 @@ for i in [0]:
                 # reward case
                 # if sum(nus) > nu_total_max ==> penalty
                 # penalty에도 weight를 준다.
-                penalty = abs(max((0, sum(self.nus)-self.nu_total_max)))**2
-                reward = - I - penalty
+                # penalty = abs(max((0, sum(self.nus)-self.nu_total_max)))**2
+                reward = - I
                 # if np.sum(self.nus) > self.nu_total_max:
                 #     reward -= 10000
-                reward = reward/2500000000000000000
+                reward = reward
                 reward *= self.dt
 
                 self.rewards.append(reward)
@@ -162,7 +162,7 @@ for i in [0]:
         plt.legend()
         plt.title('SLIAR model with control')
         plt.xlabel('day')
-        plt.savefig(f"{npath}/outputs/2023-10-26/11-00-32/figures/SLIAR_w_control_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-30/16-31-19/figures/SLIAR_w_control_{str(epi)}.png", dpi=300)
 
         # For action plot
         plt.clf()
@@ -170,7 +170,7 @@ for i in [0]:
         plt.grid()
         plt.legend()
         plt.title(f'Control:{score}')
-        plt.savefig(f"{npath}/outputs/2023-10-26/11-00-32/figures/control_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-30/16-31-19/figures/control_{str(epi)}.png", dpi=300)
 
         plt.figure(figsize=(8,8))
         plt.subplot(3, 1, 1)
@@ -188,5 +188,5 @@ for i in [0]:
         plt.subplot(3, 1, 3)
         plt.plot(time_stamp, states[:,0], '.-b', label = 'S')
         plt.ylabel('Susceptible')
-        plt.savefig(f"{npath}/outputs/2023-10-26/11-00-32/figures/all_{str(epi)}.png", dpi=300)
+        plt.savefig(f"{npath}/outputs/2023-10-30/16-31-19/figures/all_{str(epi)}.png", dpi=300)
 
