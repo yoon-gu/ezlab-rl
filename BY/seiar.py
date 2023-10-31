@@ -105,14 +105,9 @@ def main(conf : DictConfig) -> None:
             S, E, I, A = new_state
             self.state = new_state
 
-            # reward case
-            # if sum(nus) > nu_total_max ==> penalty
-            # penalty에도 weight를 준다.
-            penalty = abs(max((0, sum(self.nus)-self.nu_total_max)))**2
-            reward = - I - penalty
-            # if np.sum(self.nus) > self.nu_total_max:
-            #     reward -= 10000
-            reward = reward/self.scale
+            # check reward by initialization
+            reward = - I 
+            reward = reward
             reward *= self.dt
 
             self.rewards.append(reward)
@@ -229,7 +224,7 @@ def main(conf : DictConfig) -> None:
             plt.show(block=False)        
 
 
-    torch.save(agent.qnetwork_local.state_dict(), f'checkpoint.pth{i_episode+1000}')
+    torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
 
     actions_window = np.array(ACTIONS_window)
     df1 = pd.DataFrame(actions_window)
@@ -256,41 +251,26 @@ def main(conf : DictConfig) -> None:
     plt.savefig('epsilon.png', dpi=300)
     plt.show(block=False)
 
-"""
+
     # 3. Visualize Controlled SIR Dynamics
-    agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
-    env = SliarEnvironment()
+    agent.qnetwork_local.load_state_dict(torch.load(f'checkpoint.pth'))
+    env = SeiarEnvironment()
     state = env.reset()
     max_t = 300
     states = state
     actions = []
-    ACTIONSS = []
     score = 0
     time_stamp = np.arange(0, max_t, conf.dt)
     for t in time_stamp:
         action = agent.act(state, eps=0.0)
-        ACTION = ACTIONS[action]
-        ACTIONSS = np.append(ACTIONSS, ACTION)
-        actions = np.append(actions, action)
+        actions = np.append(action)
         next_state, reward, done, _ = env.step(action)
         states = np.vstack((states, next_state))
         state = next_state
-
-    print(ACTIONSS)
-    ACTIONSS = np.array(ACTIONSS).reshape(int(max_t/conf.dt), 3)
-    S, L, I, A = np.hsplit(states, 4)
-    nu_, tau_, sigma_ = np.hsplit(ACTIONSS, conf.action_dim)
-    I_mid = (I[1:] + I[:-1]) / 2.
-    nu_mid = (nu_[1:] + nu_[:-1]) / 2.
-    tau_mid = (tau_[1:] + tau_[:-1]) / 2.
-    sigma_mid = (sigma_[1:] + sigma_[:-1]) / 2.
-    cost1 = np.sum(I_mid.flatten())
-    cost2 = np.sum((conf.nu_max * nu_mid.flatten()) ** 2)
-    cost3 = np.sum((conf.tau_max * tau_mid.flatten()) ** 2)
-    cost4 = np.sum((conf.sigma_max * sigma_mid.flatten()) ** 2)
-    cost = cost1 + conf.Q * cost2 + conf.R * cost3 + conf.W * cost4
-
+        score += reward
+    actions_ = np.array(actions)
     time_stamp = np.append(time_stamp, max_t)
+
     plt.clf()
     fig, ax1 = plt.subplots()
     ax1.plot(time_stamp, states[:,0], '.-b', label = 'S')
@@ -304,22 +284,34 @@ def main(conf : DictConfig) -> None:
     plt.legend()
     plt.title('SLIAR model with control')
     plt.xlabel('day')
-    plt.savefig('SLIAR_w_control'+str(conf.dt)+'.png', dpi=300)
-    plt.show(block=False)
-    
+    plt.savefig(f"SLIAR_w_control.png", dpi=300)
+
+    # For action plot
     plt.clf()
-    plt.plot(range(max_t), nu_, 'k+--', label = 'Vaccine')
-    plt.plot(range(max_t), tau_, 'b2--', label = 'Treatment')
-    plt.plot(range(max_t), sigma_, 'r1--', label = 'Social Distancing')
-    plt.ylim(-2.5 * 1e6, 0)
+    plt.plot(actions_*500000, 'k+--', label = 'Vaccine')
     plt.grid()
     plt.legend()
-    plt.title('Control('+ str(cost)+')')
-    plt.xlabel('day')
-    plt.savefig('SLIAR_control_u'+str(conf.dt)+'.png', dpi=300)
-    plt.show(block=False)
+    plt.title(f'Control:{score}')
+    plt.savefig(f"control.png", dpi=300)
 
-"""
+    plt.figure(figsize=(8,8))
+    plt.subplot(3, 1, 1)
+    plt.plot(time_stamp, states[:,2], '.-r', label = 'I')
+    plt.ylabel('Infected')
+    plt.title(f'Control:{score}')
+    plt.xticks(color='w')
+    
+    plt.subplot(3, 1, 2)
+    plt.plot(actions_*500000, '-k', label = 'Vaccine')
+    plt.ylabel('Vaccination')
+    #plt.ylim([0.0, 0.01])
+    plt.xticks(color='w')
+    
+    plt.subplot(3, 1, 3)
+    plt.plot(time_stamp, states[:,0], '.-b', label = 'S')
+    plt.ylabel('Susceptible')
+    plt.savefig(f"all.png", dpi=300)
+
 
 
 if __name__ == '__main__':
