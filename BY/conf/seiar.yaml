@@ -1,8 +1,8 @@
 
 beta: 0           # why?? --> 돌아가는지 확인??
 psi: 0.7
-nu_daily_max: 500000 # 1%
-nu_total_max: 5000000 # 10%
+nu_daily_max: 750000 # 1.5%
+nu_total_max: 25000000 # 50%
 kappa: 0.7143
 alpha: 0.1667
 tau: 0.0
