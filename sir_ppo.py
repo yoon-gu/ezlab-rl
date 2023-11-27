@@ -37,7 +37,8 @@ def main(conf: DictConfig):
                             # net_arch=[16, 32, 64, 16]
                         )
     model = PPO("MlpPolicy", train_env, verbose=0,
-                policy_kwargs=policy_kwargs)
+                policy_kwargs=policy_kwargs,
+                learning_rate=0.0005)
 
     eval_env = instantiate(conf.sir)
     eval_callback = EvalCallback(
@@ -93,8 +94,7 @@ def main(conf: DictConfig):
     sns.lineplot(data=df, x='days', y='infected', color='r', ax=axes[1])
 
     sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre', ax=axes[2])
-    # axes[2].set_ylim([-conf.sir.nu_daily_max*0.1, max(conf.sir.nu_daily_max * 1.2, 0.01)])
-    axes[2].set_ylim([-0.1, 1.1])
+    axes[2].set_ylim([-conf.sir.v_max * 0.05, conf.sir.v_max * 1.1])
 
     sns.lineplot(data=df, x='days', y='rewards', color='g', ax=axes[3])
 
@@ -140,8 +140,7 @@ def main(conf: DictConfig):
         sns.lineplot(data=df, x='days', y='infected', color='r', ax=axes[1])
 
         sns.lineplot(data=df, x='days', y='vaccines', color='k', drawstyle='steps-pre', ax=axes[2])
-        # axes[2].set_ylim([-conf.sir.nu_daily_max*0.1, max(conf.sir.nu_daily_max * 1.2, 0.01)])
-        axes[2].set_ylim([-0.1, 1.1])
+        axes[2].set_ylim([-conf.sir.v_max * 0.05, conf.sir.v_max * 1.1])
 
         sns.lineplot(data=df, x='days', y='rewards', color='g', ax=axes[3])
 

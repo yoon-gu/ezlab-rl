@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 from scipy.integrate import odeint
 
-def sir(y, t, beta, gamma, nu):
+def sir(y, t, beta, gamma):
     S, I = y
-    dydt = np.array([-beta * S * I - nu * S, beta * S * I - gamma * I])
+    dydt = np.array([-beta * S * I, beta * S * I - gamma * I])
     return dydt
 
 class SirEnvironment(gym.Env):
@@ -24,12 +24,13 @@ class SirEnvironment(gym.Env):
     actions: list
     vaccine_importance: float
     continuous: bool
-    def __init__(self, S0, I0, beta, gamma, v_min, v_max, tf, dt, vaccine_importance, continuous, population):
+    def __init__(self, S0, I0, beta, gamma, v_min, v_max, v_total_max, tf, dt, vaccine_importance, continuous, population):
         self.state = np.array([S0, I0])
         self.beta = beta
         self.gamma = gamma
         self.v_min = v_min
         self.v_max = v_max
+        self.v_total_max = v_total_max
         self.S0 = S0
         self.I0 = I0
         self.tf = tf
@@ -66,22 +67,24 @@ class SirEnvironment(gym.Env):
 
     def step(self, action):
         if self.continuous:
-            vaccine = self.action2vaccine(action)
+            N_nu = self.action2vaccine(action)
         else:
-            vaccine = self.v_min if action == 0 else self.v_max
-        self.actions.append(vaccine)
+            N_nu = self.v_min if action == 0 else self.v_max
+        self.actions.append(N_nu)
 
         S0, I0 = self.state
-        sol = odeint(sir, [S0, I0],
+        sol = odeint(sir, [max(S0 - N_nu, 0), I0],
                      np.linspace(0, self.dt, 101),
-                     args=(self.beta, self.gamma, vaccine * S0))
+                     args=(self.beta, self.gamma))
         
         self.time += self.dt
         new_state = sol[-1, :]
         S, I = new_state
         self.state = new_state
         
-        reward = - I - self.vaccine_importance * vaccine * S - vaccine**2
+        reward = (- I - self.vaccine_importance * N_nu)
+        if sum(self.actions) > self.v_total_max:
+            reward -= 200_000
         reward *= self.dt
 
         self.rewards.append(reward)
