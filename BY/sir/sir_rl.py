@@ -5,6 +5,8 @@ from collections import deque
 import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 from dqn_agent import Agent
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 
 def sir(y, t, beta, gamma, u):
@@ -21,28 +23,34 @@ def sir(y, t, beta, gamma, u):
 
 
 class SirEnvironment:
-    def __init__(self, S0=9999990, I0=10):
-        # S0 = 990
-        # I0 = 10
+    def __init__(self, S0=5e7/(5e7+1), I0=1/(5e7+1)):
+        # S0 = 5e7
+        # I0 = 1
         # R0 = 0
-        # N = 1000
-        # beta = 0.002
-        # gamma = 0.5
+        # N = S0+I0
+        # R_0 = 1.9847
+        # beta = R_0 * N / gamma
+        # gamma = 1e-1
 
         self.state = np.array([S0, I0])
-        self.beta = 0.000000036
-        self.gamma = 1/10
-        self.nu_daily_max = 500000
-        self.nu_total_max = 5000000
+        self.R0 = 1.9847
+        self.gamma = 0.12
+        self.beta = self.R0 * self.gamma / (S0+I0) 
+        self.beta = self.beta * (S0+I0)
+        self.nu_daily_max = 750000/(S0+I0)
+        self.nu_total_max = 25000000/(S0+I0)
         self.nu_min = 0.0
         self.nus = []
-        # self.beta = 0.00000007
-        # self.gamma = 1/10
 
-    def reset(self, S0=9999990, I0=10):
+    def reset(self, S0=5e7/(5e7+1), I0=1/(5e7+1)):
         self.state = np.array([S0, I0])
-        self.beta = 0.000000036
-        self.gamma = 1/10
+        self.R0 = 1.9847
+        self.gamma = 0.12
+        self.beta = self.R0 * self.gamma / (S0+I0) 
+        self.beta = self.beta * (S0+I0)
+        self.nu_daily_max = 750000/(S0+I0)
+        self.nu_total_max = 25000000/(S0+I0)
+        self.nu_min = 0.0
         self.nus = []
         return self.state
 
@@ -51,7 +59,7 @@ class SirEnvironment:
         self.nus.append(nu)
         S0, I0 = self.state
         # sol = odeint(df, initial, dt, args = (beta, gamma, action))
-        sol = odeint(sir, [max(0, S0-nu),I0], np.linspace(0, 1, 101), args=(self.beta, self.gamma, action))
+        sol = odeint(sir, [max(0, S0-nu), I0], np.linspace(0, 1, 101), args=(self.beta, self.gamma, 0))
         # 계산하고 제일 끝  state가 new
         new_state = sol[-1, :]
         # new state
@@ -60,10 +68,8 @@ class SirEnvironment:
         self.state = new_state
 
         # reward case
-        reward = -I - nu
-        if np.sum(self.nus) > self.nu_total_max:
-            reward -= 200000
-        reward = reward/1e7
+        penalty = abs(max((0, sum(self.nus)-self.nu_total_max))) * 5e7
+        reward = - I - penalty
         
         # new_state[1] : I < 1.0 이면 멈춤
         done = True if new_state[1] < 1.0 else False
@@ -93,21 +99,25 @@ for t in range(max_t):
     #print(state)
 
 plt.clf()
-plt.plot(range(max_t+1), states[:,0].flatten(), '.-')
-plt.plot(range(max_t+1), states[:,1].flatten(), '.-')
+fig, ax1 = plt.subplots()
+ax1.plot(range(max_t+1), states[:,0].flatten() * (5e7+1), '.-b', label = 'S')
+ax1.legend(loc = 'upper left')
+ax2 = ax1.twinx()
+ax2.plot(range(max_t+1), states[:,1].flatten() * (5e7+1), '.-r', label = 'I')
+ax2.legend(loc = 'lower right')
 plt.grid()
 plt.title('SIR model without control')
 plt.xlabel('day')
-plt.savefig('SIR_wo_control.png', dpi=300)
+plt.savefig('SIR_wo_control_normal.png', dpi=300)
 plt.show(block=False)
 
 #######################################################################################################
 # 2. Train DQN Agent
 env = SirEnvironment()
 # action | 0 : no vacc. 1 : vacc.
-agent = Agent(state_size=2, action_size=2, seed=0, scale=1e7)
+agent = Agent(state_size=2, action_size=2, seed=0, scale=1)
 ## Parameters
-n_episodes=7000
+n_episodes=6000
 eps_start=1.0 # Too large epsilon for a stable learning
 eps_end=0.001
 eps_decay=0.99
@@ -178,16 +188,20 @@ for t in range(max_t):
     state = next_state
 
 plt.clf()
-plt.plot(range(max_t+1), states[:,0].flatten(), '.-')
-plt.plot(range(max_t+1), states[:,1].flatten(), '.-')
+fig, ax1 = plt.subplots()
+ax1.plot(range(max_t+1), states[:,0].flatten() * (5e7+1), '.-b', label = 'S')
+ax1.legend(loc = 'upper left')
+ax2 = ax1.twinx()
+ax2.plot(range(max_t+1), states[:,1].flatten() * (5e7+1), '.-r', label = 'I')
+ax2.legend(loc = 'lower right')
 plt.grid()
-plt.title('SIR model with control')
+plt.title('SIR model without control')
 plt.xlabel('day')
 plt.savefig('SIR_w_control.png', dpi=300)
 plt.show(block=False)
 
 plt.clf()
-plt.plot(range(max_t), actions, '.-k')
+plt.plot(range(max_t), actions * 750000, '.-k')
 plt.grid()
 plt.title('Vaccine Control')
 plt.xlabel('day')
