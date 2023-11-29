@@ -5,7 +5,9 @@ from gym.core import RewardWrapper
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt 
-from .seir import SEIR
+# .seir: solve SDEs
+# .seir_ode: solve ODEs
+from .seir_ode import SEIR
 from IPython.display import clear_output
 from textwrap import wrap
 
