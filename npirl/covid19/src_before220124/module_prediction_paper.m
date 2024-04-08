@@ -1,0 +1,47 @@
+function module_prediction_paper(params,index_sc,path)
+
+% maintain
+% params.sd = [params.sd, 1 * params.sd(end) * ones(1,42), 1 * params.sd(end) * ones(1,42), 1 * params.sd(end) * ones(1,97)];
+
+% % downward1
+% params.sd = [params.sd, 1.4 * params.sd(end) * ones(1,42), 1.4 * params.sd(end) * ones(1,42), 1.4 * params.sd(end) * ones(1,97)];
+
+% % downward2
+% params.sd = [params.sd, (1.4^2) * params.sd(end) * ones(1,42), (1.4^2) * params.sd(end) * ones(1,42), (1.4^2) * params.sd(end) * ones(1,97)];
+
+% stepbystep
+% params.sd = [params.sd, 1.4 * params.sd(end) * ones(1,42), (1.4^2) * params.sd(end) * ones(1,42), (1.4^3) * params.sd(end) * ones(1,97)];
+params.sd = [params.sd, 1.4 * params.sd(end) * ones(1,42), (1.4^2) * params.sd(end) * ones(1,139)];
+
+switch index_sc
+    case 'sc_maintain'
+        params.sc_rate = 1;
+    case 'sc_upward1'
+        params.sc_rate = 1.4;
+    case 'sc_upward2'
+        params.sc_rate = (1.4^2);
+    case 'sc_upward3'
+        params.sc_rate = 7.0721;
+end
+
+result = solve_covid19(params.delta,params,2);
+
+% fprintf('start ols procedure \n')
+% theta0 = 10;
+% lb = 0;
+% ub = inf;
+% options = optimoptions('lsqnonlin');
+% temp_SI = sum(result.SI)';
+% f = @(theta) temp_SI(202:240)*theta - params.severe_bed_using;
+% [theta_OLS, ~] = lsqnonlin(f,theta0,lb,ub,options);
+% result.bed_scale = theta_OLS;
+
+% module_plot_paper('prediction',params,result,{index_sc},path)
+% 
+% Rn = reproduction_number(params,result,params.beta,params.delta);
+% module_plot_paper('reproduction number',params,Rn,{index_sc},path)
+
+Rn = reproduction_number(params,result,params.beta,params.delta);
+save('temp_Rn','Rn')
+module_plot_paper('prediction_reproduction',params,result,{index_sc},path)
+
