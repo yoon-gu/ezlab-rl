@@ -364,7 +364,7 @@ SI = np.sum(states[:,108:117],1)
 new_inf = np.sum(states[:,117:126],1)
 
 # Compare the result
-result = loadmat('/Users/boyeonkim/research/npirl/sir/result.mat')
+result = loadmat(f'{current_directory}/result.mat')
 S_ = result['SS'][0]
 E_ = result['EE'][0]
 I_ = result['II'][0]
