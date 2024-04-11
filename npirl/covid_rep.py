@@ -97,12 +97,12 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
        delta = 1
        beta = 0.0505
        contact = 9X9 (contact matrix)
-       변이 : 471일, 사회적 거리두기 일자 : 259일 (시작부터~259까지)
-       WAIFW = (471X1)*(1X259)*(9X9)
+       변이 : 471일, 사회적 거리두기 일자 : 439일 (시작부터~439까지)
+       WAIFW = (471X1)*(1X439)*(9X9)
        WAIFW = 모두 상수 * contact matrix'''
     
     # t_idx parameters
-    if t_idx > 259:
+    if t_idx > 258:
         # school closing action
         contact[1,1] = contact[1,1] * sc
     
@@ -113,8 +113,7 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
     delta_eff = delta_eff[t_idx]
     alpha_eff = alpha_eff[t_idx]
     # social distancing
-    # This part is used in the reproduced covid 19 model.
-    # sd = sd[t_idx]
+    sd = sd[t_idx]
 
     # WAIFW
     # delta + alpha effect
@@ -137,6 +136,7 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
 
         # age flow (단기라서 없음)
     
+        
         # Difference equations
         '''시간에 따른 parameter : e1, e2, mV1, mV2
         연령에 따른 parmater : lambda, fatality_rate, severe_illness_rate
@@ -273,14 +273,18 @@ class covidEnvironment:
         self.dt = 0.001
 
         # action space
+        self.nu_total_max = 13000.0
+        self.nu_min = 0.0
+        self.nus = []
+
         self.rewards = []
         self.history = [self.state]
         return self.state
 
     def step(self, action, t_idx):
         # action value change
-        sd = [self.sd[t_idx]*1, 0.4402*1.4, 0.4402*(1.4**2), 0.4402*(1.4**3)]
-        sd = sd[action]
+        # nu = self.nu_min if action == 0 else self.nu_daily_max
+        # self.nus.append(nu)
         
         # state
         y0 = self.state
@@ -288,7 +292,7 @@ class covidEnvironment:
         sol = covid(y0, self.dt, t_idx, self.mV1, self.mV2,
                     self.e1, self.e2, self.kappa, self.alpha, self.gamma, 
                     self.vprevf1, self.vprevf2, self.fatality_rate, self.vprevs1,self.vprevs2, self.severe_illness_rate, 
-                    self.alpha_eff, self.delta_eff, self.delta, self.beta, sd, self.sc, self.contact)
+                    self.alpha_eff, self.delta_eff, self.delta, self.beta, self.sd, self.sc, self.contact)
         new_state = sol
 
         # new state
@@ -311,8 +315,7 @@ class covidEnvironment:
         self.state = new_state
 
         # reward case
-        # 실험용 : newinf + severecase + Fatalitycase
-        reward = - np.sum(new_inf) - np.sum(SI) - np.sum(F)
+        reward = 1
         reward *= 1
         
         self.rewards.append(reward)
@@ -326,102 +329,109 @@ class covidEnvironment:
 
 plt.rcParams['figure.figsize'] = (8, 4.5)
 
-
-# 2. Train DQN Agent
+# 1. Without Control
 env = covidEnvironment()
-# action | 0 : no vacc. 1 : vacc.
-agent = Agent(state_size=126, action_size=4, seed=0, scale=1)
-## Parameters
-max_t = 440
-n_episodes=6000
-eps_start=1.0 # Too large epsilon for a stable learning
-eps_end=0.001
-eps_decay=0.99
-
-## Loop to learn
-scores = []                        # list containing scores from each episode
-scores_window = deque(maxlen=100)  # last 100 scores (replay bufferr)
-eps = eps_start                    # initialize epsilon
-st = time.time()
-for i_episode in range(1, n_episodes+1):
-    state = env.reset()
-    score = 0
-    actions = []
-    for t_idx in range(max_t):
-        # epsilon - greedy로 action 탐색 (policy)
-        action = agent.act(state, eps)
-        actions.append(action)
-        # Taking action
-        next_state, reward, done, _ = env.step(action,t_idx)
-        # Store transitions in replay memory D
-        agent.step(state, action, reward, next_state, done)
-        state = next_state
-        score += reward
-
-        if done:
-            break 
-    # replay buffer
-    et = time.time()
-    scores_window.append(score)       # save most recent score
-    scores.append(score)              # save most recent score
-    eps = max(eps_end, eps_decay*eps) # decrease epsilon
-
-    
-    print('\rEpisode {}\tAverage Score: {:.2f} \tTime: {:.2f}s'.format(i_episode, np.mean(scores_window), et-st), end="")
-    if i_episode % 500 == 0:
-        print('\rEpisode {}\tAverage Score: {:.2f} \tTime: {:.2f}s'.format(i_episode, np.mean(scores_window), et-st))
-        print(np.array(actions)[:5], eps)
-    if np.mean(scores_window)>=200.0:
-        print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
-        break
-
-# 학습 다하고 저장!
-torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
-
-
-plt.clf()
-plt.plot(scores)
-plt.grid()
-plt.ylabel('cumulative future reward')
-plt.xlabel('episode')
-plt.savefig('covid_score.png', dpi=300)
-plt.show(block=False)
-
-#######################################################################################################
-# 3. Visualize Controlled covid Dynamics
-agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
-env = covidEnvironment()
-max_t = 440
 state = env.reset()
-states = state
-actions = []
+# t = 440days
+max_t = 439
+states = state.reshape(1,-1)[0]
+st = time.time()
 for t_idx in range(max_t):
-    # from dqn_agent import Agent
-    action = agent.act(state, eps=0.0)
-    # optimal action
-    actions = np.append(actions, action)
-    next_state, reward, done, _ = env.step(action,t_idx)
-    agent.step(state, action, reward, next_state, done)
+    action = 0
+    next_state, reward, done, _ = env.step(action, t_idx)
+    # np.vstack : 배열을 세로로 결합, 요소(열) 개수가 일치해야함, 행은 상관 없음
+    # np.hstack : 배열을 가로로 결합, 행이 일치해야함, 열 상관없음.
     states = np.vstack((states, next_state))
     state = next_state
 
+et = time.time()
+print("time :", et-st, "초")
+
+S = np.sum(states[:,0:9],1)
+E = np.sum(states[:,9:18],1)
+I = np.sum(states[:,18:27],1)
+H = np.sum(states[:,27:36],1)
+R = np.sum(states[:,36:45],1)
+V1 = np.sum(states[:,45:54],1)
+V2 = np.sum(states[:,54:63],1)
+EV1 = np.sum(states[:,63:72],1)
+EV2 = np.sum(states[:,72:81],1)
+IV1 = np.sum(states[:,81:90],1)
+IV2 = np.sum(states[:,90:99],1)
+F = np.sum(states[:,99:108],1)
+SI = np.sum(states[:,108:117],1)
+new_inf = np.sum(states[:,117:126],1)
+
+# Compare the result
+result = loadmat(f'{current_directory}/result.mat')
+S_ = result['SS'][0]
+E_ = result['EE'][0]
+I_ = result['II'][0]
+H_ = result['HH'][0]
+R_ = result['RR'][0]
+V1_ = result['VV1'][0]
+V2_ = result['VV2'][0]
+EV1_ = result['EVV1'][0]
+EV2_ = result['EVV2'][0]
+IV1_ = result['IVV1'][0]
+IV2_ = result['IVV2'][0]
+F_ = result['FF'][0]
+SI_ = result['SII'][0]
+new_inf_ = result['new_inf_'][0]
+
+# plot 비교
 plt.clf()
-fig, ax1 = plt.subplots()
-ax1.plot(range(max_t+1), states[:,0].flatten() * (5e7+1), '.-b', label = 'S')
-ax1.legend(loc = 'upper left')
-ax2 = ax1.twinx()
-ax2.plot(range(max_t+1), states[:,1].flatten() * (5e7+1), '.-r', label = 'I')
-ax2.legend(loc = 'lower right')
-plt.grid()
-plt.title('covid model without control')
-plt.xlabel('day')
-plt.savefig('covid_w_control.png', dpi=300)
-plt.show(block=False)
+plt.plot(range(440), S_[:440], S)
+plt.savefig('S.png', dpi=300)
 
 plt.clf()
-plt.plot(range(max_t), actions * 750000, '.-k')
-plt.grid()
-plt.title('Vaccine Control')
-plt.xlabel('day')
-plt.savefig('covid_control_u.png', dpi=300)
-plt.show(block=False)
+plt.plot(range(440), E_[:440], E)
+plt.savefig('E.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), I_[:440], I)
+plt.savefig('I.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), H_[:440], H)
+plt.savefig('H.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), R_[:440], R)
+plt.savefig('R.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), EV1_[:440], EV1)
+plt.savefig('EV1.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), EV2_[:440], EV2)
+plt.savefig('EV2.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), IV1_[:440], IV1)
+plt.savefig('IV1.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), IV2_[:440], IV2)
+plt.savefig('IV2.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), V1_[:440], V1)
+plt.savefig('V1.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440), V2_[:440], V2)
+plt.savefig('V2.png', dpi=300)
+
+plt.clf()
+plt.plot(range(439), F_[:439], F[1:440])
+plt.savefig('F.png', dpi=300)
+
+plt.clf()
+plt.plot(range(439), SI_[:439], SI[1:440])
+plt.savefig('SI.png', dpi=300)
+
+plt.clf()
+plt.plot(range(439), new_inf_[:439], new_inf[1:440])
+plt.savefig('new_inf.png', dpi=300)
