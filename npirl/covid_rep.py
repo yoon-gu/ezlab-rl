@@ -7,6 +7,7 @@ from scipy.integrate import odeint
 from dqn_agent import Agent
 import os
 from scipy.io import loadmat
+import time
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 ## Load the data
@@ -96,8 +97,8 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
        delta = 1
        beta = 0.0505
        contact = 9X9 (contact matrix)
-       변이 : 471일, 사회적 거리두기 일자 : 259일 (시작부터~259까지)
-       WAIFW = (471X1)*(1X259)*(9X9)
+       변이 : 471일, 사회적 거리두기 일자 : 439일 (시작부터~439까지)
+       WAIFW = (471X1)*(1X439)*(9X9)
        WAIFW = 모두 상수 * contact matrix'''
     
     # t_idx parameters
@@ -233,7 +234,7 @@ class covidEnvironment:
 
         # others
         self.tf = 440
-        self.dt = 0.0001
+        self.dt = 0.001
         self.time = 0
         self.days = [self.time]
         self.his = np.array([self.S0, self.E0, self.I0, self.H0, self.R0,
@@ -269,7 +270,7 @@ class covidEnvironment:
         self.e2 = M['e2'][:,0]
         self.sd = M['sd'][0]
         self.sc = M['sc_rate'][0][0]
-        self.dt = 0.0001
+        self.dt = 0.001
 
         # action space
         self.nu_total_max = 13000.0
@@ -332,21 +333,19 @@ plt.rcParams['figure.figsize'] = (8, 4.5)
 env = covidEnvironment()
 state = env.reset()
 # t = 440days
-max_t = 259
+max_t = 439
 states = state.reshape(1,-1)[0]
-# action은 없는 상태 why? without control 이니까
-actions = []
+st = time.time()
 for t_idx in range(max_t):
     action = 0
-    #print(states)
     next_state, reward, done, _ = env.step(action, t_idx)
-    #print(env.step(action))
     # np.vstack : 배열을 세로로 결합, 요소(열) 개수가 일치해야함, 행은 상관 없음
     # np.hstack : 배열을 가로로 결합, 행이 일치해야함, 열 상관없음.
     states = np.vstack((states, next_state))
-    #print(states)
     state = next_state
-    #print(state)
+
+et = time.time()
+print("time :", et-st, "초")
 
 S = np.sum(states[:,0:9],1)
 E = np.sum(states[:,9:18],1)
@@ -382,57 +381,57 @@ new_inf_ = result['new_inf_'][0]
 
 # plot 비교
 plt.clf()
-plt.plot(range(260), S_[:260], S)
+plt.plot(range(440), S_[:440], S)
 plt.savefig('S.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), E_[:260], E)
+plt.plot(range(440), E_[:440], E)
 plt.savefig('E.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), I_[:260], I)
+plt.plot(range(440), I_[:440], I)
 plt.savefig('I.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), H_[:260], H)
+plt.plot(range(440), H_[:440], H)
 plt.savefig('H.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), R_[:260], R)
+plt.plot(range(440), R_[:440], R)
 plt.savefig('R.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), EV1_[:260], EV1)
+plt.plot(range(440), EV1_[:440], EV1)
 plt.savefig('EV1.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), EV2_[:260], EV2)
+plt.plot(range(440), EV2_[:440], EV2)
 plt.savefig('EV2.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), IV1_[:260], IV1)
+plt.plot(range(440), IV1_[:440], IV1)
 plt.savefig('IV1.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), IV2_[:260], IV2)
+plt.plot(range(440), IV2_[:440], IV2)
 plt.savefig('IV2.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), V1_[:260], V1)
+plt.plot(range(440), V1_[:440], V1)
 plt.savefig('V1.png', dpi=300)
 
 plt.clf()
-plt.plot(range(260), V2_[:260], V2)
+plt.plot(range(440), V2_[:440], V2)
 plt.savefig('V2.png', dpi=300)
 
 plt.clf()
-plt.plot(range(259), F_[:259], F[1:260])
+plt.plot(range(439), F_[:439], F[1:440])
 plt.savefig('F.png', dpi=300)
 
 plt.clf()
-plt.plot(range(259), SI_[:259], SI[1:260])
+plt.plot(range(439), SI_[:439], SI[1:440])
 plt.savefig('SI.png', dpi=300)
 
 plt.clf()
-plt.plot(range(259), new_inf_[:259], new_inf[1:260])
+plt.plot(range(439), new_inf_[:439], new_inf[1:440])
 plt.savefig('new_inf.png', dpi=300)
