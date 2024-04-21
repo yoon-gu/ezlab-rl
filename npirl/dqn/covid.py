@@ -38,17 +38,6 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
     F = np.zeros(9)
     SI = np.zeros(9)
     new_inf = np.zeros(9)
-
-    ## for flag
-    # - Flag check
-    neg_flag_S_hist = np.full((9, 1), False, dtype=bool)
-    neg_flag_S_hist = neg_flag_S_hist.reshape(-1)
-    neg_flag_V1_hist = np.full((9, 1), False, dtype=bool)
-    neg_flag_V1_hist = neg_flag_V1_hist.reshape(-1)
-    neg_flag_S = np.full((9, 1), False, dtype=bool)
-    neg_flag_S = neg_flag_S.reshape(-1)
-    neg_flag_V1 = np.full((9, 1), False, dtype=bool)
-    neg_flag_V1 = neg_flag_V1.reshape(-1)
     
     # WAIFW
     '''sd = 1 X 440 (440일치 social distancing)
@@ -153,8 +142,6 @@ class covidEnvironment:
         self.new_inf0 = np.zeros(9)
         self.F0 = np.zeros(9)
         self.SI0 = np.zeros(9)
-        # self.mV1 = M['V1']
-        # self.mV2 = M['V2']
         self.mV1 = MV['mv1']
         self.mV2 = MV['mv2']
         
@@ -233,7 +220,7 @@ class covidEnvironment:
         if t_idx < 258:
             sd_ = self.sd[t_idx]
         else:
-            sd = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1]
+            sd = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1, 1.4]
             sd_ = sd[action]
         
         # state
@@ -267,8 +254,7 @@ class covidEnvironment:
         # reward case
         # 실험용 : newinf + severecase + Fatalitycase
         reward = - (np.sum(new_inf) + np.sum(SI) + np.sum(F))/500000
-        reward *= 1
-        
+
         self.rewards.append(reward)
         self.days.append(self.time)
         self.history.append(new_state)
@@ -284,7 +270,7 @@ plt.rcParams['figure.figsize'] = (8, 4.5)
 # 2. Train DQN Agent
 env = covidEnvironment()
 # action | 0 : no vacc. 1 : vacc.
-agent = Agent(state_size=126, action_size=4, seed=0, scale=1)
+agent = Agent(state_size=126, action_size=5, seed=0, scale=1)
 ## Parameters
 max_t = 440
 n_episodes=1000
@@ -449,7 +435,7 @@ plt.savefig('New_RL.png', dpi=300)
 
 
 # for actions
-sd_rl = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1]
+sd_rl = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1, 1.4]
 sd_RL = []
 action_ = action[259:440]
 for i in range(len(action_)):
