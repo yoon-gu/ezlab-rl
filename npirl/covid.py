@@ -405,21 +405,86 @@ for t_idx in range(max_t):
     states = np.vstack((states, next_state))
     state = next_state
 
+
+########## For state plot ##################
+
+S = np.sum(states[:,0:9],1)
+E = np.sum(states[:,9:18],1)
+I = np.sum(states[:,18:27],1)
+H = np.sum(states[:,27:36],1)
+R = np.sum(states[:,36:45],1)
+V1 = np.sum(states[:,45:54],1)
+V2 = np.sum(states[:,54:63],1)
+EV1 = np.sum(states[:,63:72],1)
+EV2 = np.sum(states[:,72:81],1)
+IV1 = np.sum(states[:,81:90],1)
+IV2 = np.sum(states[:,90:99],1)
+F = np.sum(states[:,99:108],1)
+SI = np.sum(states[:,108:117],1)
+new_inf = np.sum(states[:,117:126],1)
+
+
+# plot 비교
 plt.clf()
-fig, ax1 = plt.subplots()
-ax1.plot(range(max_t+1), states[:,0].flatten() * (5e7+1), '.-b', label = 'S')
-ax1.legend(loc = 'upper left')
-ax2 = ax1.twinx()
-ax2.plot(range(max_t+1), states[:,1].flatten() * (5e7+1), '.-r', label = 'I')
-ax2.legend(loc = 'lower right')
-plt.grid()
-plt.title('covid model without control')
-plt.xlabel('day')
-plt.savefig('covid_w_control.png', dpi=300)
-plt.show(block=False)
+plt.plot(range(440+1), S)
+plt.savefig(f'{current_directory}/figure/S.png', dpi=300)
 
 plt.clf()
-plt.plot(range(max_t), actions * 750000, '.-k')
+plt.plot(range(440+1), E)
+plt.savefig(f'{current_directory}/figure/E.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), I)
+plt.savefig(f'{current_directory}/figure/I.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), H)
+plt.savefig(f'{current_directory}/figure/H.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), R)
+plt.savefig(f'{current_directory}/figure/R.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), EV1)
+plt.savefig(f'{current_directory}/figure/EV1.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), EV2)
+plt.savefig(f'{current_directory}/figure/EV2.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), IV1)
+plt.savefig(f'{current_directory}/figure/IV1.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), IV2)
+plt.savefig(f'{current_directory}/figure/IV2.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), V1)
+plt.savefig(f'{current_directory}/figure/V1.png', dpi=300)
+
+plt.clf()
+plt.plot(range(440+1), V2)
+plt.savefig(f'{current_directory}/figure/V2.png', dpi=300)
+
+plt.clf()
+plt.plot(range(439+1), F[1:441])
+plt.savefig(f'{current_directory}/figure/F.png', dpi=300)
+
+plt.clf()
+plt.plot(range(439+1), SI[1:441])
+plt.savefig(f'{current_directory}/figure/SI.png', dpi=300)
+
+plt.clf()
+plt.plot(range(439+1), new_inf[1:441])
+plt.savefig(f'{current_directory}/figure/new_inf.png', dpi=300)
+
+
+############# For action #####################
+plt.clf()
+plt.plot(range(max_t), actions, '.k')
 plt.grid()
 plt.title('Vaccine Control')
 plt.xlabel('day')
