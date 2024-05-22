@@ -8,6 +8,7 @@ from dqn_agent import Agent
 import os
 from scipy.io import loadmat
 import time
+#from numba import jit
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 ## Load the data
@@ -15,6 +16,7 @@ current_directory = os.getcwd()
 M = loadmat(f'{current_directory}/dqn/params.mat')
 #MV = loadmat(f'{current_directory}/dqn/mv.mat')
 
+#@jit
 def update_vaccine(vac_1st, vac_2nd, ind, neg_flag_S, neg_flag_V1, neg_flag_S_hist, neg_flag_V1_hist):
     if np.any(neg_flag_S):
         # Find the vaccination number for age groups having negative states
@@ -55,6 +57,7 @@ def update_vaccine(vac_1st, vac_2nd, ind, neg_flag_S, neg_flag_V1, neg_flag_S_hi
     
     return vac_1st, vac_2nd, neg_flag_S_hist, neg_flag_V1_hist
 
+#@jit
 def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2, fatality_rate, 
           vprevs1, vprevs2, severe_illness_rate, alpha_eff, delta_eff, 
           delta, beta, sd, sc, contact, neg_flag_S_hist, neg_flag_V1_hist):
@@ -289,6 +292,9 @@ class covidEnvironment:
 
     def step(self, action, t_idx):
         # action value change
+        sd = [self.sd[t_idx]*1, 0.4402*1.4, 0.4402*(1.4**2), 0.4402*(1.4**3)]
+        sd = sd[action]
+
         # nu = self.nu_min if action == 0 else self.nu_daily_max
         # self.nus.append(nu)
         # t_idx paramter
@@ -300,8 +306,6 @@ class covidEnvironment:
         e2 = self.e2[t_idx]
         delta_eff = self.delta_eff[t_idx]
         alpha_eff = self.alpha_eff[t_idx]
-        # social distancing
-        sd = self.sd[t_idx]
 
         # state
         y0 = self.state
@@ -350,7 +354,7 @@ plt.rcParams['figure.figsize'] = (8, 4.5)
 # 2. Train DQN Agent
 env = covidEnvironment()
 # action | 0 : no vacc. 1 : vacc.
-agent = Agent(state_size=126, action_size=5, seed=0, scale=1)
+agent = Agent(state_size=126, action_size=4, seed=0, scale=1)
 ## Parameters
 max_t = 440
 n_episodes=1000
