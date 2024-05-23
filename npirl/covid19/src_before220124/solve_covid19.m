@@ -68,7 +68,8 @@ if sc_flag == 0
         end
         delta_eff(i) =  (M.alpha_eff(i) + delta * M.delta_eff(i));
         WAIFW = beta * M.contact * delta_eff(i) * M.sd(i);
-        % Loop for tspan
+       
+        % Loop for tspan (1day)
         for j = 1 : length(1:1/M.dt)
             lambdaS = WAIFW * (I(:,i,j) + IV1(:,i,j) + IV2(:,i,j)) .* S(:,i,j);
             lambdaV1 = WAIFW * (1 - M.e1(i)) * (I(:,i,j) + IV1(:,i,j) + IV2(:,i,j)) .* V1(:,i,j);
@@ -93,10 +94,12 @@ if sc_flag == 0
             if (any(S(:,i,j+1) < 0) || any(V1(:,i,j+1) < 0))
                 neg_flag_S = (S(:,i,j+1) < 0);
                 neg_flag_V1 = (V1(:,i,j+1) < 0);
+                i
                 break;
             end
         end
         
+        % - flag 나오면 i reset
         if (any(neg_flag_S) || any(neg_flag_V1))
             % update vaccineation number
             [M.V1, M.V2, neg_flag_S_hist, neg_flag_V1_hist] = update_vaccine(M.V1, M.V2, i, neg_flag_S, ...
@@ -105,8 +108,9 @@ if sc_flag == 0
             neg_flag_S(:) = false;
             neg_flag_V1(:) = false;
             % Reset index
-            i = i - 1;
+            i = i - 1
         end
+
         % update for next i
         S(:,i+1,1) = S(:,i,end);
         E(:,i+1,1) = E(:,i,end);
@@ -163,6 +167,7 @@ elseif sc_flag == 1
             if (any(S(:,i,j+1) < 0) || any(V1(:,i,j+1) < 0))
                 neg_flag_S = (S(:,i,j+1) < 0);
                 neg_flag_V1 = (V1(:,i,j+1) < 0);
+                i
                 break;
             end
         end

@@ -12,8 +12,8 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 ## Load the data
 current_directory = os.getcwd()
-M = loadmat(f'{current_directory}/params.mat')
-MV = loadmat(f'{current_directory}/mv.mat')
+M = loadmat(f'{current_directory}/dqn/params.mat')
+#MV = loadmat(f'{current_directory}/dqn/mv.mat')
 
 def update_vaccine(vac_1st, vac_2nd, ind, neg_flag_S, neg_flag_V1, neg_flag_S_hist, neg_flag_V1_hist):
     if np.any(neg_flag_S):
@@ -57,7 +57,7 @@ def update_vaccine(vac_1st, vac_2nd, ind, neg_flag_S, neg_flag_V1, neg_flag_S_hi
 
 def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2, fatality_rate, 
           vprevs1, vprevs2, severe_illness_rate, alpha_eff, delta_eff, 
-          delta, beta, sd, sc, contact):
+          delta, beta, sd, sc, contact, neg_flag_S_hist, neg_flag_V1_hist):
     '''state size : 13 * 9 = 117
        state size : 14 * 9 (include the new inf)
        WAIFW는 action에 따라 변하므로, action에 따라 움직이게 function안에서 움직여야 함'''
@@ -81,9 +81,7 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
 
     ## for flag
     # - Flag check
-    neg_flag_S_hist = np.full((9, 1), False, dtype=bool)
     neg_flag_S_hist = neg_flag_S_hist.reshape(-1)
-    neg_flag_V1_hist = np.full((9, 1), False, dtype=bool)
     neg_flag_V1_hist = neg_flag_V1_hist.reshape(-1)
     neg_flag_S = np.full((9, 1), False, dtype=bool)
     neg_flag_S = neg_flag_S.reshape(-1)
@@ -106,14 +104,8 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
         # school closing action
         contact[1,1] = contact[1,1] * sc
     
-    e1 = e1[t_idx]
-    e2 = e2[t_idx]
     mv1 = mV1[t_idx,:]
     mv2 = mV2[t_idx,:]
-    delta_eff = delta_eff[t_idx]
-    alpha_eff = alpha_eff[t_idx]
-    # social distancing
-    sd = sd[t_idx]
 
     # WAIFW
     # delta + alpha effect
@@ -172,16 +164,34 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
         IV1 = IV1_next
         IV2 = IV2_next
 
-    #     # negtive flag check
-    #     if np.any(S < 0) or np.any(V1 < 0):
-    #         neg_flag_S = S < 0
-    #         neg_flag_V1 = V1 < 0
-    #         break
+        # negtive flag check
+        if np.any(S < 0) or np.any(V1 < 0):
+            neg_flag_S = S < 0
+            neg_flag_V1 = V1 < 0
+            break
 
-    # if np.any(neg_flag_S) or np.any(neg_flag_V1):
-    #     mV1, mV2, neg_flag_S_hist, neg_flag_V1_hist = update_vaccine(mV1, mV2, t_idx, neg_flag_S, neg_flag_V1, 
-    #                                                                  neg_flag_S_hist, neg_flag_V1_hist)
+    if np.any(neg_flag_S) or np.any(neg_flag_V1):
+        mV1, mV2, neg_flag_S_hist, neg_flag_V1_hist = update_vaccine(mV1, mV2, t_idx, neg_flag_S, neg_flag_V1, 
+                                                                     neg_flag_S_hist, neg_flag_V1_hist)
+        print(t_idx)
+        y_ = covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2, fatality_rate, 
+          vprevs1, vprevs2, severe_illness_rate, alpha_eff, delta_eff, delta, beta, sd, sc, contact, neg_flag_S_hist, neg_flag_V1_hist)
     
+        S = y_[0:9]
+        E = y_[9:18]
+        I = y_[18:27]
+        H = y_[27:36]
+        R = y_[36:45]
+        V1 = y_[45:54]
+        V2 = y_[54:63]
+        EV1 = y_[63:72]
+        EV2 = y_[72:81]
+        IV1 = y_[81:90]
+        IV2 = y_[90:99]
+        F = y_[99:108]
+        SI = y_[108:117]
+        new_inf = y_[117:126]
+
     #print(lambdaS)
     dydt = np.array([S, E, I, H, R, V1, V2, EV1, EV2, IV1, IV2, F, SI, new_inf])
     dydt = dydt.reshape(1,-1)[0]
@@ -204,10 +214,10 @@ class covidEnvironment:
         self.new_inf0 = np.zeros(9)
         self.F0 = np.zeros(9)
         self.SI0 = np.zeros(9)
-        # self.mV1 = M['V1']
-        # self.mV2 = M['V2']
-        self.mV1 = MV['mv1']
-        self.mV2 = MV['mv2']
+        self.mV1 = M['V1']
+        self.mV2 = M['V2']
+        # self.mV1 = MV['mv1']
+        # self.mV2 = MV['mv2']
         
         # parameters
         self.beta = M['beta'][0][0]
@@ -234,7 +244,7 @@ class covidEnvironment:
 
         # others
         self.tf = 440
-        self.dt = 0.001
+        self.dt = 0.01
         self.time = 0
         self.days = [self.time]
         self.his = np.array([self.S0, self.E0, self.I0, self.H0, self.R0,
@@ -270,12 +280,9 @@ class covidEnvironment:
         self.e2 = M['e2'][:,0]
         self.sd = M['sd'][0]
         self.sc = M['sc_rate'][0][0]
-        self.dt = 0.001
+        self.dt = 0.01
 
         # action space
-        self.nu_total_max = 13000.0
-        self.nu_min = 0.0
-        self.nus = []
 
         self.rewards = []
         self.history = [self.state]
@@ -285,14 +292,25 @@ class covidEnvironment:
         # action value change
         # nu = self.nu_min if action == 0 else self.nu_daily_max
         # self.nus.append(nu)
-        
+        # t_idx paramter
+        # -flag
+        neg_flag_S_hist = np.full((9, 1), False, dtype=bool)
+        neg_flag_V1_hist = np.full((9, 1), False, dtype=bool)
+
+        e1 = self.e1[t_idx]
+        e2 = self.e2[t_idx]
+        delta_eff = self.delta_eff[t_idx]
+        alpha_eff = self.alpha_eff[t_idx]
+        # social distancing
+        sd = self.sd[t_idx]
+
         # state
         y0 = self.state
         y0 = y0.reshape(1,-1)[0]
         sol = covid(y0, self.dt, t_idx, self.mV1, self.mV2,
-                    self.e1, self.e2, self.kappa, self.alpha, self.gamma, 
+                    e1, e2, self.kappa, self.alpha, self.gamma, 
                     self.vprevf1, self.vprevf2, self.fatality_rate, self.vprevs1,self.vprevs2, self.severe_illness_rate, 
-                    self.alpha_eff, self.delta_eff, self.delta, self.beta, self.sd, self.sc, self.contact)
+                    alpha_eff, delta_eff, self.delta, self.beta, sd, self.sc, self.contact, neg_flag_S_hist, neg_flag_V1_hist)
         new_state = sol
 
         # new state
@@ -363,7 +381,7 @@ SI = np.sum(states[:,108:117],1)
 new_inf = np.sum(states[:,117:126],1)
 
 # Compare the result
-result = loadmat(f'{current_directory}/result.mat')
+result = loadmat(f'{current_directory}/dqn/result.mat')
 S_ = result['SS'][0]
 E_ = result['EE'][0]
 I_ = result['II'][0]
@@ -381,7 +399,9 @@ new_inf_ = result['new_inf_'][0]
 
 # plot 비교
 plt.clf()
-plt.plot(range(440), S_[:440], S)
+plt.plot(range(440), S_[:440], label='S_result')
+plt.plot(range(440), S, label='S_pred')
+plt.legend()
 plt.savefig('S.png', dpi=300)
 
 plt.clf()
