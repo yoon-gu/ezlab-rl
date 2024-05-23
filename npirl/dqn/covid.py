@@ -15,7 +15,7 @@ os.environ['KMP_DUPLICATE_LIB_OK']='True'
 current_directory = os.getcwd()
 M = loadmat(f'{current_directory}/dqn/params.mat')
 #MV = loadmat(f'{current_directory}/dqn/mv.mat')
-
+BE = loadmat(f'{current_directory}/dqn/result4init.mat')
 #@jit
 def update_vaccine(vac_1st, vac_2nd, ind, neg_flag_S, neg_flag_V1, neg_flag_S_hist, neg_flag_V1_hist):
     if np.any(neg_flag_S):
@@ -93,8 +93,8 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
     
     # WAIFW
     '''sd = 1 X 440 (440일치 social distancing)
-       alpha_eff = 471 X 1
-       delta_eff = 471 X 1
+       alpha_eff = 471 X 1 --> constant
+       delta_eff = 471 X 1 --> constant
        delta = 1
        beta = 0.0505
        contact = 9X9 (contact matrix)
@@ -102,10 +102,8 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
        WAIFW = (471X1)*(1X439)*(9X9)
        WAIFW = 모두 상수 * contact matrix'''
     
-    # t_idx parameters
-    if t_idx > 258:
-        # school closing action
-        contact[1,1] = contact[1,1] * sc
+    # t_idx parameters --> NO need
+    contact[1,1] = contact[1,1] * sc
     
     mv1 = mV1[t_idx,:]
     mv2 = mV2[t_idx,:]
@@ -133,10 +131,10 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
     
         
         # Difference equations
-        '''시간에 따른 parameter : e1, e2, mV1, mV2
+        '''시간에 따른 parameter : mV1, mV2 
         연령에 따른 parmater : lambda, fatality_rate, severe_illness_rate
-        e1, e2 : Vaccine eff
-        alpha, delta : 변이 비율
+        e1, e2 : Vaccine eff (constant)
+        alpha, delta : 변이 비율 (contant)
         kappa:
         gamma:
         mV1, mV2 : number of vaccination'''
@@ -202,22 +200,22 @@ def covid(y, dt, t_idx, mV1, mV2, e1, e2, kappa, alpha, gamma, vprevf1, vprevf2,
 class covidEnvironment:
     def __init__(self):
         # initial
-        self.S0 = M['S0'][:,0]
-        self.E0 = M['E0'][:,0]
-        self.I0 = M['I0'][:,0]
-        self.H0 = M['H0'][:,0]
-        self.R0 = M['R0'][:,0]
-        self.V10 = np.zeros(9)
-        self.V20 = np.zeros(9)
-        self.EV10 = np.zeros(9)
-        self.IV10 = np.zeros(9)
-        self.EV20 = np.zeros(9)
-        self.IV20 = np.zeros(9)
-        self.new_inf0 = np.zeros(9)
-        self.F0 = np.zeros(9)
-        self.SI0 = np.zeros(9)
-        self.mV1 = M['V1']
-        self.mV2 = M['V2']
+        self.S0 = BE['S260'][:,0]
+        self.E0 = BE['E260'][:,0]
+        self.I0 = BE['I260'][:,0]
+        self.H0 = BE['H260'][:,0]
+        self.R0 = BE['R260'][:,0]
+        self.V10 = BE['V1206'][:,0]
+        self.V20 = BE['V2260'][:,0]
+        self.EV10 = BE['EV1260'][:,0]
+        self.IV10 = BE['IV1260'][:,0]
+        self.EV20 = BE['EV2260'][:,0]
+        self.IV20 = BE['EV1260'][:,0]
+        self.new_inf0 = BE['NI260'][:,0]
+        self.F0 = BE['F260'][:,0]
+        self.SI0 = BE['SI260'][:,0]
+        self.mV1 = BE['MV1']
+        self.mV2 = BE['MV2']
         # self.mV1 = MV['mv1']
         # self.mV2 = MV['mv2']
         
@@ -233,19 +231,19 @@ class covidEnvironment:
         self.vprevs2 = M['vprevs'][0][1]
         self.vprevf1 = M['vprevf'][0][0]
         self.vprevf2 = M['vprevf'][0][1]
-        self.alpha_eff = M['alpha_eff'][:,0]
-        self.delta_eff = M['delta_eff'][:,0]
+        self.alpha_eff = 0.03
+        self.delta_eff = 0.97
         self.contact = M['contact']
-        self.e1 = M['e1'][:,0]
-        self.e2 = M['e2'][:,0]
-        self.sd = M['sd'][0]
-        self.sc = M['sc_rate'][0][0]
+        self.e1 = 0.3326
+        self.e2 = 0.7770
+        self.sc = 0
+        self.dt = 0.01
 
         # action space
         self.sds = []
 
         # others
-        self.tf = 440
+        self.tf = 180
         self.dt = 0.01
         self.time = 0
         self.days = [self.time]
@@ -275,13 +273,12 @@ class covidEnvironment:
         self.vprevs2 = M['vprevs'][0][1]
         self.vprevf1 = M['vprevf'][0][0]
         self.vprevf2 = M['vprevf'][0][1]
-        self.alpha_eff = M['alpha_eff'][:,0]
-        self.delta_eff = M['delta_eff'][:,0]
+        self.alpha_eff = 0.03
+        self.delta_eff = 0.97
         self.contact = M['contact']
-        self.e1 = M['e1'][:,0]
-        self.e2 = M['e2'][:,0]
-        self.sd = M['sd'][0]
-        self.sc = M['sc_rate'][0][0]
+        self.e1 = 0.3326
+        self.e2 = 0.7770
+        self.sc = 0
         self.dt = 0.01
 
         # action space
@@ -292,7 +289,8 @@ class covidEnvironment:
 
     def step(self, action, t_idx):
         # action value change
-        sd = [self.sd[t_idx]*1, 0.4402*1.4, 0.4402*(1.4**2), 0.4402*(1.4**3)]
+        # (stay 1st 2nd 3rd)
+        sd = [1, 0.4402, 0.4402*1.4, 0.4402*(1.4**2)]
         sd = sd[action]
 
         # nu = self.nu_min if action == 0 else self.nu_daily_max
@@ -301,19 +299,13 @@ class covidEnvironment:
         # -flag
         neg_flag_S_hist = np.full((9, 1), False, dtype=bool)
         neg_flag_V1_hist = np.full((9, 1), False, dtype=bool)
-
-        e1 = self.e1[t_idx]
-        e2 = self.e2[t_idx]
-        delta_eff = self.delta_eff[t_idx]
-        alpha_eff = self.alpha_eff[t_idx]
-
         # state
         y0 = self.state
         y0 = y0.reshape(1,-1)[0]
         sol = covid(y0, self.dt, t_idx, self.mV1, self.mV2,
-                    e1, e2, self.kappa, self.alpha, self.gamma, 
+                    self.e1, self.e2, self.kappa, self.alpha, self.gamma, 
                     self.vprevf1, self.vprevf2, self.fatality_rate, self.vprevs1,self.vprevs2, self.severe_illness_rate, 
-                    alpha_eff, delta_eff, self.delta, self.beta, sd, self.sc, self.contact, neg_flag_S_hist, neg_flag_V1_hist)
+                    self.alpha_eff, self.delta_eff, self.delta, self.beta, sd, self.sc, self.contact, neg_flag_S_hist, neg_flag_V1_hist)
         new_state = sol
 
         # new state
@@ -337,7 +329,7 @@ class covidEnvironment:
 
         # reward case
         # 실험용 : newinf + severecase + Fatalitycase
-        reward = - (np.sum(new_inf) + np.sum(SI) + np.sum(F))/500000
+        reward = - np.sum(I)/500000
 
         self.rewards.append(reward)
         self.days.append(self.time)
@@ -356,8 +348,8 @@ env = covidEnvironment()
 # action | 0 : no vacc. 1 : vacc.
 agent = Agent(state_size=126, action_size=4, seed=0, scale=1)
 ## Parameters
-max_t = 440
-n_episodes=1000
+max_t = 180
+n_episodes=10000
 eps_start=1.0 # Too large epsilon for a stable learning
 eps_end=0.001
 eps_decay=0.99
@@ -372,14 +364,14 @@ for i_episode in range(1, n_episodes+1):
     score = 0
     actions = []
     for t_idx in range(max_t):
-        if t_idx < 259 :
-            action = 0
-            next_state, reward, done, _ = env.step(action, t_idx)
-        else :
-            # epsilon - greedy로 action 탐색 (policy)
-            action = agent.act(state, eps)
-            # Taking action
-            next_state, reward, done, _ = env.step(action,t_idx)
+        # if t_idx < 259 :
+        #     action = 0
+        #     next_state, reward, done, _ = env.step(action, t_idx)
+        # else :
+        # epsilon - greedy로 action 탐색 (policy)
+        action = agent.act(state, eps)
+        # Taking action
+        next_state, reward, done, _ = env.step(action,t_idx)
         
         # Store transitions in replay memory D
         actions.append(action)
@@ -413,7 +405,7 @@ plt.plot(scores)
 plt.grid()
 plt.ylabel('cumulative future reward')
 plt.xlabel('episode')
-plt.savefig('../figure/covid_score.png', dpi=300)
+plt.savefig('figure/covid_score.png', dpi=300)
 plt.show(block=False)
 
 #######################################################################################################
@@ -453,7 +445,7 @@ SI = np.sum(states[:,108:117],1)
 new_inf = np.sum(states[:,117:126],1)
 
 # Compare the result
-result = loadmat(f'{current_directory}/result.mat')
+result = loadmat('dqn/result.mat')
 S_ = result['SS'][0]
 E_ = result['EE'][0]
 I_ = result['II'][0]
@@ -473,57 +465,57 @@ plt.clf()
 plt.plot(range(440), S_[:440], alpha=0.5, label='S', linestyle='dashed')
 plt.plot(S, label = 'S_RL')
 plt.legend()
-plt.savefig('../figure/S_RL.png', dpi=300)
+plt.savefig('figure/S_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(440), E_[:440], alpha=0.5, label='E', linestyle='dashed')
 plt.plot(E, label = 'E_RL')
 plt.legend()
-plt.savefig('../figure/E_RL.png', dpi=300)
+plt.savefig('figure/E_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(440), I_[:440], alpha=0.5, label='I', linestyle='dashed')
 plt.plot(I, label = 'I_RL')
 plt.legend()
-plt.savefig('../figure/I_RL.png', dpi=300)
+plt.savefig('figure/I_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(440), H_[:440], alpha=0.5, label='H', linestyle='dashed')
 plt.plot(H, label = 'H_RL')
 plt.legend()
-plt.savefig('../figure/H_RL.png', dpi=300)
+plt.savefig('figure/H_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(440), R_[:440], alpha=0.5, label='R', linestyle='dashed')
 plt.plot(R, label = 'R_RL')
 plt.legend()
-plt.savefig('../figure/R_RL.png', dpi=300)
+plt.savefig('figure/R_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(439), F_[:439], alpha=0.5, label='F', linestyle='dashed')
 plt.plot(F[1:440], label = 'F_RL')
 plt.legend()
-plt.savefig('../figure/F_RL.png', dpi=300)
+plt.savefig('figure/F_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(439), SI_[:439], alpha=0.5, label='SI', linestyle='dashed')
 plt.plot(SI[1:440], label = 'SI_RL')
 plt.legend()
-plt.savefig('../figure/SI_RL.png', dpi=300)
+plt.savefig('figure/SI_RL.png', dpi=300)
 
 plt.clf()
 plt.plot(range(439), new_inf_[:439], alpha=0.5, label='New case', linestyle='dashed')
 plt.plot(new_inf[1:440], label = 'new_case_RL')
 plt.legend()
-plt.savefig('../figure/New_RL.png', dpi=300)
+plt.savefig('figure/New_RL.png', dpi=300)
 
 
 # for actions
 sd_rl = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1, 1.4]
 sd_RL = []
-action_ = action[259:440]
+action_ = actions[259:440]
 for i in range(len(action_)):
-    idx = action_[i]
+    idx = int(action_[i])
     sd_ = sd_rl[idx]
     sd_RL.append(sd_)
 
@@ -535,5 +527,5 @@ plt.legend()
 plt.grid()
 plt.title('Social distancing')
 plt.xlabel('day')
-plt.savefig('../figure/SD level.png', dpi=300)
+plt.savefig('figure/SD level.png', dpi=300)
 plt.show(block=False)
