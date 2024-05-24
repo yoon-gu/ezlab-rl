@@ -290,7 +290,7 @@ class covidEnvironment:
     def step(self, action, t_idx):
         # action value change
         # (stay 1st 2nd 3rd)
-        sd = [1, 0.4402, 0.4402*1.4, 0.4402*(1.4**2)]
+        sd = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1]
         sd = sd[action]
 
         # nu = self.nu_min if action == 0 else self.nu_daily_max
@@ -329,7 +329,7 @@ class covidEnvironment:
 
         # reward case
         # 실험용 : newinf + severecase + Fatalitycase
-        reward = - np.sum(I)/500000
+        reward = - (np.sum(SI) + np.sum(F)) / 5000
 
         self.rewards.append(reward)
         self.days.append(self.time)
@@ -412,7 +412,7 @@ plt.show(block=False)
 # 3. Visualize Controlled covid Dynamics
 agent.qnetwork_local.load_state_dict(torch.load('checkpoint.pth'))
 env = covidEnvironment()
-max_t = 440
+max_t = 180
 state = env.reset()
 states = state
 actions = []
@@ -462,58 +462,58 @@ SI_ = result['SII'][0]
 new_inf_ = result['new_inf_'][0]
 
 plt.clf()
-plt.plot(range(440), S_[:440], alpha=0.5, label='S', linestyle='dashed')
+plt.plot(range(180), S_[:180], alpha=0.5, label='S', linestyle='dashed')
 plt.plot(S, label = 'S_RL')
 plt.legend()
 plt.savefig('figure/S_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(440), E_[:440], alpha=0.5, label='E', linestyle='dashed')
+plt.plot(range(180), E_[:180], alpha=0.5, label='E', linestyle='dashed')
 plt.plot(E, label = 'E_RL')
 plt.legend()
 plt.savefig('figure/E_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(440), I_[:440], alpha=0.5, label='I', linestyle='dashed')
+plt.plot(range(180), I_[:180], alpha=0.5, label='I', linestyle='dashed')
 plt.plot(I, label = 'I_RL')
 plt.legend()
 plt.savefig('figure/I_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(440), H_[:440], alpha=0.5, label='H', linestyle='dashed')
+plt.plot(range(180), H_[:180], alpha=0.5, label='H', linestyle='dashed')
 plt.plot(H, label = 'H_RL')
 plt.legend()
 plt.savefig('figure/H_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(440), R_[:440], alpha=0.5, label='R', linestyle='dashed')
+plt.plot(range(180), R_[:180], alpha=0.5, label='R', linestyle='dashed')
 plt.plot(R, label = 'R_RL')
 plt.legend()
 plt.savefig('figure/R_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(439), F_[:439], alpha=0.5, label='F', linestyle='dashed')
-plt.plot(F[1:440], label = 'F_RL')
+plt.plot(range(179), F_[:179], alpha=0.5, label='F', linestyle='dashed')
+plt.plot(F[1:180], label = 'F_RL')
 plt.legend()
 plt.savefig('figure/F_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(439), SI_[:439], alpha=0.5, label='SI', linestyle='dashed')
-plt.plot(SI[1:440], label = 'SI_RL')
+plt.plot(range(179), SI_[:179], alpha=0.5, label='SI', linestyle='dashed')
+plt.plot(SI[1:180], label = 'SI_RL')
 plt.legend()
 plt.savefig('figure/SI_RL.png', dpi=300)
 
 plt.clf()
-plt.plot(range(439), new_inf_[:439], alpha=0.5, label='New case', linestyle='dashed')
-plt.plot(new_inf[1:440], label = 'new_case_RL')
+plt.plot(range(179), new_inf_[:179], alpha=0.5, label='New case', linestyle='dashed')
+plt.plot(new_inf[1:180], label = 'new_case_RL')
 plt.legend()
 plt.savefig('figure/New_RL.png', dpi=300)
 
 
 # for actions
-sd_rl = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1, 1.4]
+sd_rl = [0.4402, 0.4402*1.4, 0.4402*(1.4**2), 1]
 sd_RL = []
-action_ = actions[259:440]
+action_ = actions[259:180]
 for i in range(len(action_)):
     idx = int(action_[i])
     sd_ = sd_rl[idx]
