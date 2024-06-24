@@ -14,8 +14,8 @@ BUFFER_SIZE = int(1e5)  # replay buffer size
 BATCH_SIZE = 128        # minibatch size (머신 학습시 사용되는 미니배치 크기)
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR = 1e-9               # learning rate
-UPDATE_EVERY = 4        # how often to update the network
+LR = 1e-5               # learning rate
+UPDATE_EVERY = 1        # how often to update the network
 
 # 학습을 GPU로 할 경우 "cuda:0", 그렇지 않을 경우 "CPU"
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
