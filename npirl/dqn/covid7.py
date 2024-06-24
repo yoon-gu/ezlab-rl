@@ -27,15 +27,22 @@ def main(conf : DictConfig) -> None:
             # Find the vaccination number for age groups having negative states
             vac_num_neg_state = np.sum(vac_1st[ind:, neg_flag_S], axis=1)
 
-            # Compute ratio between other age groups
+           # Compute ratio between other age groups
             neg_flag_S_hist = neg_flag_S_hist | neg_flag_S
-            ratio = vac_1st[ind:, ~neg_flag_S_hist] / np.sum(vac_1st[ind:, ~neg_flag_S_hist], axis=1, keepdims=True)
+            valid_indices = ~neg_flag_S_hist
+            vac_1st_valid = vac_1st[ind:, valid_indices]
+            sum_vac_1st_valid = np.sum(vac_1st_valid, axis=1, keepdims=True)
+            
+            # Prevent division by zero
+            sum_vac_1st_valid[sum_vac_1st_valid == 0] = 1
+            
+            ratio = vac_1st_valid / sum_vac_1st_valid
 
             # Compute vaccination number using the ratio
             vac = vac_num_neg_state[:, np.newaxis] * ratio
 
             # Deal with NaNs resulting from division by zero
-            vac[np.isnan(vac)] = 0
+            vac = np.nan_to_num(vac)
 
             # Update vaccination number for 1st dose
             vac_1st[ind:, ~neg_flag_S_hist] += vac
@@ -48,13 +55,20 @@ def main(conf : DictConfig) -> None:
 
             # Compute ratio between other age groups
             neg_flag_V1_hist = neg_flag_V1_hist | neg_flag_V1
-            ratio = vac_2nd[ind:, ~neg_flag_V1_hist] / np.sum(vac_2nd[ind:, ~neg_flag_V1_hist], axis=1, keepdims=True)
+            valid_indices2 = ~neg_flag_V1_hist
+            vac_2nd_valid = vac_2nd[ind:, valid_indices2]
+            sum_vac_2nd_valid = np.sum(vac_2nd_valid, axis=1, keepdims=True)
+            
+            # Prevent division by zero
+            sum_vac_2nd_valid[sum_vac_2nd_valid == 0] = 1
+            
+            ratio = vac_2nd_valid / sum_vac_2nd_valid
 
             # Compute vaccination number using the ratio
             vac = vac_num_neg_state[:, np.newaxis] * ratio
 
             # Deal with NaNs
-            vac[np.isnan(vac)] = 0
+            vac = np.nan_to_num(vac)
 
             # Update vaccination number for 2nd dose
             vac_2nd[ind:, ~neg_flag_V1_hist] += vac
@@ -393,7 +407,7 @@ def main(conf : DictConfig) -> None:
 
             # reward case
             # 실험용 : newinf + severecase + Fatalitycase
-            reward = - (np.sum(I))
+            reward = - (np.sum(I))/1e5
 
             self.rewards.append(reward)
             self.days.append(self.time)
@@ -417,6 +431,8 @@ def main(conf : DictConfig) -> None:
     eps_start=conf.eps_start
     eps_end=conf.eps_end
     eps_decay=conf.eps_decay
+    strategy = conf.strategy
+
 
     ## Loop to learn
     scores = []                        # list containing scores from each episode
@@ -449,7 +465,15 @@ def main(conf : DictConfig) -> None:
         et = time.time()
         scores_window.append(score)       # save most recent score
         scores.append(score)              # save most recent score
-        eps = max(eps_end, eps_decay*eps) # decrease epsilon
+        if strategy == 0:
+            eps = max(eps_end, eps*(1-eps_decay)) # decrease epsilon
+        elif strategy == 1:
+            eps = eps * np.exp(-i_episode/n_episodes)
+        elif strategy == 2:
+            if i_episode % 2000 == 0:
+                eps = 0.1
+            else :
+                eps = eps * (1-eps_decay)
 
         
         print('\rEpisode {}\tAverage Score: {:.2f} \tTime: {:.2f}s'.format(i_episode, np.mean(scores_window), et-st), end="")
@@ -458,7 +482,10 @@ def main(conf : DictConfig) -> None:
             print(np.array(actions)[:5], eps)
             plt.clf()
             plt.plot(scores)
-            plt.show(block=False)
+            plt.grid()
+            plt.ylabel('cumulative future reward')
+            plt.xlabel('episode')
+            plt.savefig(f'covid_score{i_episode}.png', dpi=300)
 
         if np.mean(scores_window)>=200.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
@@ -473,7 +500,7 @@ def main(conf : DictConfig) -> None:
     plt.grid()
     plt.ylabel('cumulative future reward')
     plt.xlabel('episode')
-    plt.savefig('figure/covid_score.png', dpi=300)
+    plt.savefig('covid_score.png', dpi=300)
     plt.show(block=False)
 
     #######################################################################################################
@@ -486,7 +513,7 @@ def main(conf : DictConfig) -> None:
     actions = []
     for t_idx in range(max_t):
         # from dqn_agent import Agent
-        action = agent.act(state, eps=0.001)
+        action = agent.act(state, eps)
         # optimal action
         actions = np.append(actions, action)
         next_state, reward, done, _ = env.step(action,t_idx)
@@ -534,54 +561,54 @@ def main(conf : DictConfig) -> None:
     plt.plot(S,'.-',label = 'S_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/S7_RL.png', dpi=300)
+    plt.savefig('S7_RL.png', dpi=300)
 
     plt.clf()
     #plt.plot(range(26), E, '.-',label='E', linestyle='dashed')
     plt.plot(E,'.-',label = 'E_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/E7_RL.png', dpi=300)
+    plt.savefig('E7_RL.png', dpi=300)
 
     plt.clf()
     #plt.plot(range(26), I, '.-',label='I', linestyle='dashed')
     plt.plot(I,'.-',label = 'I_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/I7_RL.png', dpi=300)
+    plt.savefig('I7_RL.png', dpi=300)
 
     plt.clf()
     #plt.plot(range(26), H, '.-',label='H', linestyle='dashed')
     plt.plot(H,'.-',label = 'H7_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/H7_RL.png', dpi=300)
+    plt.savefig('H7_RL.png', dpi=300)
 
     plt.clf()
     #plt.plot(range(26), R, '.-',label='R', linestyle='dashed')
     plt.plot(R,'.-',label = 'R_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/R7_RL.png', dpi=300)
+    plt.savefig('R7_RL.png', dpi=300)
 
     plt.clf()
     #plt.plot(range(25), F[:25], '.-',label='F', linestyle='dashed')
     plt.plot(F, '.-',label='F_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/F7_RL.png', dpi=300)
+    plt.savefig('F7_RL.png', dpi=300)
 
     plt.clf()
     plt.plot(SI, '.-',label='SI_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/SI7_RL.png', dpi=300)
+    plt.savefig('SI7_RL.png', dpi=300)
 
     plt.clf()
     plt.plot(new_inf, '.-',label='New case_RL')
     plt.legend()
     plt.grid()
-    plt.savefig('figure/New7_RL.png', dpi=300)
+    plt.savefig('New7_RL.png', dpi=300)
 
 
     # for actions
@@ -601,7 +628,7 @@ def main(conf : DictConfig) -> None:
     plt.title('Social distancing')
     plt.xlabel('week')
     plt.yticks([4, 3, 2, 1])
-    plt.savefig('figure/SD level.png', dpi=300)
+    plt.savefig('SD level.png', dpi=300)
     plt.show(block=False)
 
 if __name__ == '__main__':
