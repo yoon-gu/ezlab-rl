@@ -1,0 +1,26 @@
+
+1. total population (6th~10th floor): 319
+2. observation period: 90 days
+3. step: 1hour
+4. # simulation: 100
+5. consumed time: 90*100 secs
+6. model info:
+sev_model = EpidemicsModel(
+    beta = 0.001,
+    traffic_data = sev_traffic_data,
+    place = 'severance',
+    incub_p_dist = stats.lognorm(s=0.547, scale=np.exp(1.857)),
+    m_incub_p_dist = 24,
+    presym_I_p_dist = stats.truncnorm(a=(0 - 2.3) / 0.49,
+                                      b=np.inf,
+                                      loc=2.3,
+                                      scale=0.49),
+    m_presym_I_p_dist = 24,
+    I_p_dist = stats.truncnorm(a=(0 - 7.2) / 4.96,
+                               b=np.inf,
+                               loc = 7.2,
+                               scale = 4.96),
+    m_I_p_dist = 24,
+    is_only_am_therapy = True,
+    test_num_per_week = 1,
+    )
