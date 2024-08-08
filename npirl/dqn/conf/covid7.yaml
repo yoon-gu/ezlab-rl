@@ -11,7 +11,7 @@ tf: 26
 
 n_episodes: 20000
 eps_start: 1.0
-eps_end: 0.0001
+eps_end: 1e-7
 eps_decay: 0.01
 strategy: 0
 

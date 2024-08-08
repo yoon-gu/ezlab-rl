@@ -12,6 +12,7 @@ import time
 from omegaconf import DictConfig, OmegaConf
 #from numba import jit
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+import pandas as pd
 
 ## Load the data
 current_directory = os.getcwd()
@@ -407,7 +408,7 @@ def main(conf : DictConfig) -> None:
 
             # reward case
             # 실험용 : newinf + severecase + Fatalitycase
-            reward = - (np.sum(I))/1e5
+            reward = - (np.sum(I))/1e4
 
             self.rewards.append(reward)
             self.days.append(self.time)
@@ -435,19 +436,17 @@ def main(conf : DictConfig) -> None:
 
 
     ## Loop to learn
-    scores = []                        # list containing scores from each episode
+    scores = []     
+    epss = []                           # list containing scores from each episode
     scores_window = deque(maxlen=100)  # last 100 scores (replay bufferr)
     eps = eps_start                    # initialize epsilon
+    ACTIONS_WINDOW = []
     st = time.time()
     for i_episode in range(1, n_episodes+1):
         state = env.reset()
         score = 0
         actions = []
         for t_idx in range(max_t):
-            # if t_idx < 259 :
-            #     action = 0
-            #     next_state, reward, done, _ = env.step(action, t_idx)
-            # else :
             # epsilon - greedy로 action 탐색 (policy)
             action = agent.act(state, eps)
             # Taking action
@@ -463,21 +462,30 @@ def main(conf : DictConfig) -> None:
                 break 
         # replay buffer
         et = time.time()
+        epss.append(eps)
         scores_window.append(score)       # save most recent score
         scores.append(score)              # save most recent score
+        ACTIONS_WINDOW.append(actions)
+
+        plt.plot(actions, '-', alpha = 0.1, label = 'control')
+        plt.title('Social distancing')
+        plt.xlabel('week')
+        plt.yticks([1, 2, 3, 4])
+        plt.savefig('SD level_check.png', dpi=300)
+
         if strategy == 0:
             eps = max(eps_end, eps*(1-eps_decay)) # decrease epsilon
         elif strategy == 1:
             eps = eps * np.exp(-i_episode/n_episodes)
         elif strategy == 2:
-            if i_episode % 2000 == 0:
-                eps = 0.1
+            if i_episode % 10000 == 0:
+                eps = eps_end
             else :
                 eps = eps * (1-eps_decay)
 
         
         print('\rEpisode {}\tAverage Score: {:.2f} \tTime: {:.2f}s'.format(i_episode, np.mean(scores_window), et-st), end="")
-        if i_episode % 500 == 0:
+        if i_episode % 1000 == 0:
             print('\rEpisode {}\tAverage Score: {:.2f} \tTime: {:.2f}s'.format(i_episode, np.mean(scores_window), et-st))
             print(np.array(actions)[:5], eps)
             plt.clf()
@@ -487,12 +495,25 @@ def main(conf : DictConfig) -> None:
             plt.xlabel('episode')
             plt.savefig(f'covid_score{i_episode}.png', dpi=300)
 
+            plt.clf()
+            plt.plot(epss)
+            plt.grid()
+            plt.ylabel('eps')
+            plt.xlabel('episode')
+            plt.savefig(f'eps{i_episode}.png', dpi=300)
+
+            torch.save(agent.qnetwork_local.state_dict(), f'checkpoint_{eps}.pth')
+
         if np.mean(scores_window)>=200.0:
             print('\nEnvironment solved in {:d} episodes!\tAverage Score: {:.2f}'.format(i_episode-100, np.mean(scores_window)))
             break
 
     # 학습 다하고 저장!
     torch.save(agent.qnetwork_local.state_dict(), 'checkpoint.pth')
+
+    actions_window = np.array(ACTIONS_WINDOW)
+    df1 = pd.DataFrame(actions_window)
+    df1.to_csv('ACTIONS.csv')   
 
 
     plt.clf()
@@ -501,6 +522,14 @@ def main(conf : DictConfig) -> None:
     plt.ylabel('cumulative future reward')
     plt.xlabel('episode')
     plt.savefig('covid_score.png', dpi=300)
+    plt.show(block=False)
+
+    plt.clf()
+    plt.plot(epss)
+    plt.grid()
+    plt.ylabel('eps')
+    plt.xlabel('episode')
+    plt.savefig('eps.png', dpi=300)
     plt.show(block=False)
 
     #######################################################################################################
@@ -593,19 +622,19 @@ def main(conf : DictConfig) -> None:
 
     plt.clf()
     #plt.plot(range(25), F[:25], '.-',label='F', linestyle='dashed')
-    plt.plot(F, '.-',label='F_RL')
+    plt.plot(F[1:], '.-',label='F_RL')
     plt.legend()
     plt.grid()
     plt.savefig('F7_RL.png', dpi=300)
 
     plt.clf()
-    plt.plot(SI, '.-',label='SI_RL')
+    plt.plot(SI[1:], '.-',label='SI_RL')
     plt.legend()
     plt.grid()
     plt.savefig('SI7_RL.png', dpi=300)
 
     plt.clf()
-    plt.plot(new_inf, '.-',label='New case_RL')
+    plt.plot(new_inf[1:], '.-',label='New case_RL')
     plt.legend()
     plt.grid()
     plt.savefig('New7_RL.png', dpi=300)

@@ -2,7 +2,7 @@ import numpy as np
 import random
 from collections import namedtuple, deque
 import csv
-from model import QNetwork
+from model_glorot import QNetwork
 import pdb
 
 import torch
@@ -11,10 +11,10 @@ import torch.optim as optim
 import pandas as pd
 
 BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 128        # minibatch size (머신 학습시 사용되는 미니배치 크기)
+BATCH_SIZE = 64        # minibatch size (머신 학습시 사용되는 미니배치 크기)
 GAMMA = 0.99            # discount factor
 TAU = 1e-3              # for soft update of target parameters
-LR = 1e-5               # learning rate
+LR = 1e-6               # learning rate
 UPDATE_EVERY = 1        # how often to update the network
 
 # 학습을 GPU로 할 경우 "cuda:0", 그렇지 않을 경우 "CPU"
@@ -53,6 +53,7 @@ class Agent():
 
         # Learn every UPDATE_EVERY time steps.
         now_step = self.t_step
+        # update step 순간이 되면 : 
         self.t_step = (now_step + 1) % UPDATE_EVERY
         if self.t_step == 0:
             # If enough samples are available in memory, get random subset and learn
@@ -98,13 +99,13 @@ class Agent():
         # Q-function > E(reward + gamma(최적정책))
         # 즉각 보상 + 에피소드가 끝날 때 까지 최적 정책을 따름으로 얻는 이익 * gamma
         Q_targets_next = self.qnetwork_target(next_states).detach().max(1)[0].unsqueeze(1)
-        Q_targets_next = Q_targets_next/self.scale
+        #Q_targets_next = Q_targets_next/self.scale
 
         Q_targets = rewards + (gamma * Q_targets_next * (1 - dones))
 
         # Get expected Q values from local model
         Q_expected = self.qnetwork_local(states).gather(1, actions)
-        Q_expected = Q_expected/self.scale
+        #Q_expected = Q_expected/self.scale
 
         # Compute loss 
         loss = F.mse_loss(Q_expected, Q_targets)
